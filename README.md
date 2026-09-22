@@ -1,110 +1,92 @@
 # Casino R&T
 
-Casino web multijoueur avec des crédits fictifs, projet SAE 5.02.
+Casino web multijoueur avec des crédits fictifs. Chacun crée son compte, reçoit
+1000 crédits et joue pendant que les autres sont connectés. Aucun argent réel.
 
-Ce dépôt contient le back-end (API Go + PostgreSQL) et le déploiement. Le front
-est dans `frontend/`.
+Projet SAE 5.02, BUT Réseaux & Télécommunications.
+
+<!-- screenshot: page d'accueil -->
+![Accueil](docs/screenshots/accueil.png)
+
+## Ce qu'il y a dedans
+
+Inscription et connexion, solde par joueur, deux jeux jouables de bout en bout,
+historique des parties, statistiques et classement entre joueurs.
+
+Le service tourne sur un NAS et est accessible depuis Internet en HTTPS.
+
+### Machine à sous
+
+Deux machines, chacune avec ses propres symboles, ses wilds, ses scatters et sa
+table de gains. Le moteur est générique : une machine se décrit en données, pas
+en code, donc en ajouter une ne demande pas de toucher au reste.
+
+Taux de retour mesurés par simulation : 91.5% et 92.9%.
+
+<!-- screenshot: machine à sous -->
+![Machine à sous](docs/screenshots/slots.png)
+
+### Roulette
+
+Roulette européenne, 37 cases avec un seul zéro. Rouge/noir, pair/impair,
+manque/passe, douzaines, colonnes et plein. Taux de retour 97.3%.
+
+<!-- screenshot: roulette -->
+![Roulette](docs/screenshots/roulette.png)
+
+### Historique et classement
+
+Chaque partie est enregistrée. Le joueur retrouve son historique, ses stats par
+jeu et sa place au classement.
+
+<!-- screenshot: stats / classement -->
+![Classement](docs/screenshots/classement.png)
 
 ## Stack
 
-Go 1.23 (Gin), PostgreSQL 16 (GORM), Docker Compose, nginx en frontal,
-Cloudflare Tunnel pour l'accès depuis Internet.
+| | |
+|---|---|
+| Interface | HTML / CSS / JavaScript |
+| API | Go 1.23, Gin |
+| Base | PostgreSQL 16, GORM |
+| Déploiement | Docker Compose sur NAS |
+| Accès Internet | nginx + Cloudflare Tunnel, HTTPS |
 
-## Lancer en local
+## Comment ça marche
+
+Le navigateur parle à nginx, qui sert l'interface et relaie `/api` vers l'API
+Go. L'API est la seule à toucher à PostgreSQL. cloudflared ouvre un tunnel
+sortant vers Cloudflare, donc aucun port n'est ouvert sur la box et
+l'administration du NAS reste injoignable depuis l'extérieur.
+
+Le point délicat c'est le solde. Plusieurs joueurs misent en même temps, et un
+même joueur peut envoyer plusieurs mises coup sur coup. Une mise se fait donc
+dans une transaction qui verrouille la ligne du joueur : on vérifie le solde,
+on tire le résultat, on écrit le nouveau solde et la partie d'un bloc. Sans ça
+deux mises simultanées lisent le même solde et une des deux disparaît.
+
+Les mots de passe sont hachés en Argon2id, les sessions sont des jetons
+aléatoires stockés en base et posés dans un cookie `HttpOnly`.
+
+## Démarrage
 
 ```bash
 cd deploy
 cp .env.example .env
-# mettre un POSTGRES_PASSWORD et COOKIE_SECURE=false pour du http
 docker compose up -d --build
 ```
 
-Ça écoute sur http://localhost:8088.
+Le détail est dans [docs/install.md](docs/install.md), et le contrat d'API pour
+le front dans [docs/api.md](docs/api.md).
 
-## Lancer sur le NAS
+## Équipe
 
-Pareil mais avec le tunnel. Il faut un `TUNNEL_TOKEN` dans le `.env`, et côté
-Cloudflare Zero Trust le service public doit pointer sur `http://web:80`.
+| | |
+|---|---|
+| Tello | Documentation et suivi du projet |
+| Idrys | Back-end, base de données, hébergement |
+| Loïc | Interface et intégration |
 
-```bash
-docker compose --profile tunnel up -d --build
-```
+## Licence
 
-## Dev sur le back seul
-
-```bash
-cd deploy && docker compose up -d db
-cd ../backend
-export DATABASE_URL="postgres://casino:MOTDEPASSE@localhost:5432/casino?sslmode=disable"
-export COOKIE_SECURE=false
-go run ./cmd/api
-```
-
-Les tables sont créées au démarrage.
-
-## Tests
-
-```bash
-cd backend
-go test ./... -short
-```
-
-Les tests de concurrence ont besoin d'une vraie base, sinon ils sont skip :
-
-```bash
-export TEST_DATABASE_URL="postgres://casino:MOTDEPASSE@localhost:5432/casino?sslmode=disable"
-go test ./internal/wallet -v
-```
-
-Ils couvrent 50 mises simultanées sur le même compte, le découvert impossible,
-30 joueurs en parallèle et le double envoi d'une même requête.
-
-Pour mesurer les taux de retour :
-
-```bash
-go test ./internal/games/... -run TestRTP -v
-```
-
-Actuellement 91.5% sur neon777, 92.9% sur cyberjungle, 97.3% à la roulette
-(36/37, roulette européenne).
-
-## Gestion des soldes
-
-Une mise = une transaction. On verrouille la ligne du joueur avec
-`SELECT ... FOR UPDATE`, on vérifie le solde, on tire le résultat, puis on
-écrit le nouveau solde et la partie. Sans le verrou, deux mises qui arrivent en
-même temps lisent le même solde et une des deux écritures écrase l'autre.
-
-Le front peut envoyer un `idempotency_key` par tour pour qu'un double-clic ou
-une requête renvoyée ne rejoue pas la partie.
-
-## Ajouter un jeu
-
-Une machine à sous, c'est juste une `Definition` dans
-`internal/games/slots/machines.go` : les rouleaux, les symboles (avec les wilds
-et les scatters), les lignes de paiement, la table de gains et le thème. Rien
-d'autre à toucher, elle apparaît toute seule dans l'API.
-
-Pour un autre type de jeu, implémenter `games.Game` et l'enregistrer dans
-`internal/games/catalog`.
-
-Le blackjack n'est pas fait. L'interface pour les jeux qui durent plusieurs
-requêtes est dans `internal/games/stateful.go`.
-
-## API
-
-Voir [docs/api.md](docs/api.md).
-
-## Arborescence
-
-```
-backend/
-  cmd/api/            main
-  internal/auth/      argon2id, sessions
-  internal/games/     registre + jeux (slots, roulette)
-  internal/wallet/    transactions et journal des parties
-  internal/httpapi/   routes
-deploy/               compose, nginx, .env.example
-frontend/             interface
-docs/api.md           contrat d'API
-```
+MIT, voir [LICENSE](LICENSE).
