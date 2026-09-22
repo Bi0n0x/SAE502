@@ -1,155 +1,129 @@
-# Contrat d'API — Casino R&T
+# API
 
-Document de reference pour l'interface. Toute modification de ce contrat est
-annoncee au groupe avant d'etre deployee.
+Base `/api`. nginx sert le front et l'API sur la même origine, donc appels en
+relatif et pas de CORS à gérer.
 
-Base : `/api` — servie par nginx sur la meme origine que l'interface, donc
-appels en chemin relatif (`fetch("/api/me")`), sans CORS a gerer.
+La session est un cookie `HttpOnly`, donc il faut `credentials: "same-origin"`
+dans les `fetch`, sinon rien ne marche.
 
-## Regles generales
+Les montants sont des entiers (crédits fictifs).
 
-- Les requetes et reponses sont en JSON (`Content-Type: application/json`).
-- **Toujours envoyer `credentials: "same-origin"`** dans `fetch` : la session
-  est portee par un cookie `HttpOnly`, inaccessible au JavaScript.
-- Les erreurs ont toujours cette forme :
+## Erreurs
 
-  ```json
-  { "error": { "code": "insufficient_funds", "message": "solde insuffisant pour cette mise" } }
-  ```
+```json
+{ "error": { "code": "insufficient_funds", "message": "solde insuffisant pour cette mise" } }
+```
 
-  Reagir au `code`, pas au `message` (qui peut evoluer).
-- Les montants sont des entiers : des credits fictifs, jamais de centimes ni
-  de decimales.
+Se baser sur `code`, le `message` peut changer.
 
-### Codes d'erreur
-
-| Code | HTTP | Sens |
-|---|---|---|
-| `invalid_body` | 400 | JSON illisible ou champ hors bornes |
-| `invalid_username` | 400 | 3 a 32 caracteres, lettres/chiffres/`-`/`_` |
-| `invalid_password` | 400 | 8 a 128 caracteres |
-| `invalid_bet` | 400 | mise nulle, negative, hors bornes, ou option inconnue |
-| `unknown_game` | 404 | cle de jeu inconnue |
-| `invalid_credentials` | 401 | pseudo ou mot de passe incorrect |
-| `unauthenticated` | 401 | pas de session |
-| `session_expired` | 401 | session expiree : rediriger vers la connexion |
-| `insufficient_funds` | 402 | solde insuffisant |
-| `username_taken` | 409 | pseudo deja pris |
-| `rate_limited` | 429 | trop de requetes : afficher un message et ralentir |
-| `internal` | 500 | erreur serveur |
-
----
+| code | http |
+|---|---|
+| `invalid_body` | 400 |
+| `invalid_username` | 400 |
+| `invalid_password` | 400 |
+| `invalid_bet` | 400 |
+| `invalid_metric` | 400 |
+| `invalid_credentials` | 401 |
+| `unauthenticated` | 401 |
+| `session_expired` | 401 |
+| `insufficient_funds` | 402 |
+| `unknown_game` | 404 |
+| `username_taken` | 409 |
+| `rate_limited` | 429 |
+| `internal` | 500 |
 
 ## Comptes
 
-### `POST /api/auth/register`
+### POST /api/auth/register
 
 ```json
 { "username": "idrys", "password": "motdepasse123" }
 ```
 
-`201` — le cookie de session est pose, le compte est credite du solde de
-depart (1 000 credits).
+Renvoie 201, pose le cookie et crédite 1000. Pseudo 3-32 caractères
+(lettres, chiffres, `-`, `_`), mot de passe 8-128.
 
 ```json
 {
-  "user": { "id": "…", "username": "idrys", "balance": 1000, "created_at": "2026-01-12T10:22:00Z" },
-  "expires_at": "2026-01-13T10:22:00Z"
+  "user": { "id": "...", "username": "idrys", "balance": 1000, "created_at": "..." },
+  "expires_at": "..."
 }
 ```
 
-Limite : 10 requetes par minute et par adresse IP.
+### POST /api/auth/login
 
-### `POST /api/auth/login`
+Même corps, même réponse en 200. En cas d'échec c'est toujours
+`invalid_credentials`, qu'on se trompe de pseudo ou de mot de passe.
 
-Meme corps, meme reponse en `200`. En cas d'echec, `401 invalid_credentials` —
-le meme message que le compte existe ou non, volontairement.
+### POST /api/auth/logout
 
-### `POST /api/auth/logout`
+Supprime la session côté serveur.
 
-`200`. La session est supprimee en base : le cookie devient inutilisable
-immediatement.
+### GET /api/me
 
-### `GET /api/me` *(session requise)*
+Session requise. Renvoie le user avec le solde relu en base.
 
-```json
-{ "user": { "id": "…", "username": "idrys", "balance": 940, "created_at": "…" } }
-```
+## Jeux
 
-Le solde est relu en base a chaque appel.
+### GET /api/games
 
----
-
-## Catalogue des jeux
-
-### `GET /api/games` *(public)*
+Liste tout le catalogue. `config` contient de quoi construire l'interface du
+jeu, donc pas besoin de coder quoi que ce soit en dur côté front : une machine
+ajoutée côté back apparaît toute seule.
 
 ```json
-{ "games": [ { "key": "neon777", "name": "Neon 777", "description": "…",
-               "min_bet": 1, "max_bet": 200, "config": { … } } ] }
+{ "games": [
+  { "key": "neon777", "name": "Neon 777", "description": "...",
+    "min_bet": 1, "max_bet": 200, "config": { ... } }
+] }
 ```
 
-`config` contient tout ce qu'il faut pour construire l'interface du jeu :
-**l'interface n'a rien a coder en dur pour un jeu donne.** Ajouter une machine
-a sous cote back-end la fait apparaitre toute seule.
+### GET /api/games/:key
 
-### `GET /api/games/:key` *(public)*
+Une seule fiche.
 
-La fiche d'un seul jeu.
+### config des machines à sous
 
-### Contenu de `config` pour une machine a sous (`type: "slots"`)
+`type: "slots"`.
 
-| Champ | Sens |
-|---|---|
-| `rows`, `reel_count` | taille de la grille |
-| `reels` | bande de chaque rouleau (utile pour l'animation de defilement) |
-| `paylines` | `paylines[j][i]` = ligne lue sur le rouleau `i` par la ligne `j` |
-| `symbols` | `id`, `name`, `emoji`, `color`, `wild`, `scatter` |
-| `paytable` | `paytable[symbole][nombre aligne]` en **pour-mille de la mise** (2500 = 2,5 fois la mise) |
-| `scatter_pays` | gains du scatter selon le nombre sur la grille |
-| `wild_multiplier` | multiplicateur applique a une ligne ou un wild a remplace un symbole |
-| `theme` | `palette`, `animation`, `reel_speed`, `sound` — propre a chaque machine |
-| `rtp`, `volatility` | taux de retour mesure, a titre informatif |
+- `rows`, `reel_count` : taille de la grille
+- `reels` : la bande de chaque rouleau, utile pour l'animation
+- `paylines` : `paylines[j][i]` = la ligne lue sur le rouleau `i`
+- `symbols` : `id`, `name`, `emoji`, `color`, `wild`, `scatter`
+- `paytable[symbole][nb aligné]` en pour-mille de la mise (2500 = 2.5x)
+- `scatter_pays[nb]`, pareil en pour-mille
+- `wild_multiplier` : multiplie la ligne si un wild a remplacé un symbole
+- `theme` : couleurs, type d'animation, vitesse des rouleaux
+- `rtp`, `volatility` : info affichable
 
-### Contenu de `config` pour la roulette (`type: "roulette"`)
+### config de la roulette
 
-| Champ | Sens |
-|---|---|
-| `pockets` | 37 (roulette europeenne, un seul zero) |
-| `bet_options` | liste de `{id, label, description, multiplier, needs_number}` |
-| `colors` | couleur de chaque numero, pour dessiner la roue et le tapis |
+`type: "roulette"`. 37 cases, un seul zéro.
 
-`multiplier` est le **total rendu** en cas de gain, mise comprise : 2 pour
-rouge/noir, 3 pour une douzaine, 36 pour un plein.
-
----
+`bet_options` liste les mises possibles avec leur `multiplier`, qui est le
+total rendu mise comprise : 2 pour rouge/noir, 3 pour une douzaine, 36 pour un
+plein. `colors` donne la couleur de chaque numéro.
 
 ## Jouer
 
-### `POST /api/games/:key/play` *(session requise)*
+### POST /api/games/:key/play
+
+Session requise.
 
 ```json
-{
-  "amount": 50,
-  "option": "red",
-  "idempotency_key": "a3f9c1e2-…"
-}
+{ "amount": 50, "option": "red", "idempotency_key": "a3f9c1e2-..." }
 ```
 
-- `option` : `"spin"` (ou vide) pour une machine a sous ; un `id` de
-  `bet_options` pour la roulette, avec le numero pour un plein
-  (`"number:17"`).
-- `idempotency_key` : **facultatif mais recommande.** Tirer un identifiant
-  aleatoire par tour (`crypto.randomUUID()`) et le renvoyer tel quel si la
-  requete est rejouee. Le serveur garantit alors qu'une seule partie est jouee,
-  meme sur double-clic ou coupure reseau.
+`option` vaut `"spin"` (ou rien) pour une machine à sous, et pour la roulette
+un id de `bet_options`, avec le numéro pour un plein : `"number:17"`.
 
-Reponse `200` :
+`idempotency_key` est optionnel mais conseillé, un `crypto.randomUUID()` par
+tour suffit. Si la requête part deux fois, la partie n'est jouée qu'une fois.
 
 ```json
 {
   "round": {
-    "id": "…",
+    "id": "...",
     "game": "roulette",
     "bet_amount": 50,
     "bet_option": "red",
@@ -158,24 +132,22 @@ Reponse `200` :
     "balance_after": 1050,
     "label": "18 rouge - gagne",
     "detail": { "result": 18, "color": "red", "won": true, "multiplier": 2 },
-    "created_at": "2026-01-12T10:25:11Z"
+    "created_at": "..."
   },
   "balance": 1050,
   "replayed": false
 }
 ```
 
-- `payout` = credits rendus, **mise comprise** : 0 si perdu.
-- `net` = `payout - bet_amount`, negatif en cas de perte.
-- `balance` = nouveau solde, a afficher directement.
-- `replayed: true` signale une requete deja traitee : rejouer l'animation a
-  partir de `detail`, sans redebiter.
+`payout` c'est ce qui revient au joueur, mise comprise, donc 0 si perdu.
+`net` = `payout - bet_amount`. `replayed: true` veut dire que la requête avait
+déjà été traitée : rejouer l'animation avec `detail` sans redébiter.
 
-`detail` pour une machine a sous :
+`detail` pour une machine à sous :
 
 ```json
 {
-  "grid": [["cherry","lemon","bell","bar","seven"], …],
+  "grid": [["cherry","lemon","bell","bar","seven"], ...],
   "stops": [3, 17, 8, 12, 1],
   "line_wins": [
     { "line": 0, "symbol": "cherry", "count": 3, "with_wild": true,
@@ -187,27 +159,24 @@ Reponse `200` :
 }
 ```
 
-`grid[ligne][rouleau]`, et `positions` liste des paires `[ligne, rouleau]` a
-mettre en valeur. `stops` permet de faire tomber les rouleaux exactement au bon
-endroit pendant l'animation.
+`grid[ligne][rouleau]`, et `positions` ce sont des paires `[ligne, rouleau]` à
+mettre en surbrillance. `stops` permet d'arrêter les rouleaux au bon endroit
+pendant l'animation.
 
-Limite : 120 mises par minute et par joueur.
+## Historique et stats
 
----
+### GET /api/me/history?limit=25&offset=0&game=roulette
 
-## Historique, statistiques, classement
-
-### `GET /api/me/history?limit=25&offset=0&game=roulette` *(session requise)*
+Session requise. Du plus récent au plus ancien. `limit` max 100, `game`
+optionnel.
 
 ```json
-{ "rounds": [ { … meme forme que round ci-dessus … } ],
-  "total": 132, "limit": 25, "offset": 0 }
+{ "rounds": [ ... ], "total": 132, "limit": 25, "offset": 0 }
 ```
 
-Trie de la partie la plus recente a la plus ancienne. `limit` est borne a 100.
-`game` est facultatif.
+### GET /api/me/stats
 
-### `GET /api/me/stats` *(session requise)*
+Session requise.
 
 ```json
 {
@@ -221,44 +190,35 @@ Trie de la partie la plus recente a la plus ancienne. `limit` est borne a 100.
 }
 ```
 
-`return_rate` est le retour effectif du joueur : il converge vers le `rtp`
-annonce par le jeu au fil des parties, ce qui fait une bonne courbe pour la
-soutenance.
+`return_rate` c'est le retour réel du joueur, il se rapproche du `rtp` du jeu
+au fil des parties.
 
-### `GET /api/leaderboard?metric=balance&limit=10` *(public)*
+### GET /api/leaderboard?metric=balance&limit=10
 
-`metric` : `balance` (defaut), `net`, `rounds`, `biggest_win`.
+Public. `metric` : `balance`, `net`, `rounds` ou `biggest_win`.
 
 ```json
-{ "metric": "net",
-  "leaderboard": [
-    { "rank": 1, "username": "idrys", "balance": 1840, "rounds": 132,
-      "net": 840, "biggest_win": 2500 }
-  ] }
+{ "metric": "net", "leaderboard": [
+  { "rank": 1, "username": "idrys", "balance": 1840, "rounds": 132,
+    "net": 840, "biggest_win": 2500 }
+] }
 ```
 
-Un joueur inscrit qui n'a encore rien mise apparait avec des compteurs a zero.
-
----
+Un joueur qui n'a jamais misé apparaît avec des compteurs à zéro.
 
 ## Divers
 
-### `GET /api/config` *(public)*
+`GET /api/config` renvoie `min_bet`, `max_bet` et `start_balance`, à lire au
+démarrage du front plutôt que de les recopier.
 
-```json
-{ "min_bet": 1, "max_bet": 500, "start_balance": 1000, "currency": "credits fictifs" }
-```
+`GET /healthz` et `GET /readyz` pour les healthchecks Docker.
 
-A lire au demarrage de l'interface pour ne pas recopier ces bornes dans le
-code du front.
+## Limites de débit
 
-### `GET /healthz` et `GET /readyz`
+10 req/min par IP sur login et register, 120 mises/min par joueur, 300 req/min
+par IP sur le reste. Au-delà c'est un 429.
 
-Sondes techniques (healthcheck Docker). `readyz` verifie aussi la base.
-
----
-
-## Exemple minimal cote interface
+## Exemple
 
 ```js
 async function api(path, options = {}) {
@@ -268,13 +228,19 @@ async function api(path, options = {}) {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(data?.error?.message || "erreur"), {
-    code: data?.error?.code, status: res.status,
-  });
+  if (!res.ok) {
+    throw Object.assign(new Error(data?.error?.message || "erreur"), {
+      code: data?.error?.code,
+      status: res.status,
+    });
+  }
   return data;
 }
 
-await api("/auth/login", { method: "POST", body: JSON.stringify({ username, password }) });
+await api("/auth/login", {
+  method: "POST",
+  body: JSON.stringify({ username, password }),
+});
 
 const { round, balance } = await api("/games/roulette/play", {
   method: "POST",
