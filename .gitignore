@@ -1,0 +1,17 @@
+# Secrets
+.env
+deploy/.env
+*.pem
+*.key
+
+# Binaires Go
+/backend/api
+/backend/bin/
+*.exe
+
+# Divers
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
