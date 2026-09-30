@@ -142,14 +142,21 @@ func (s *Service) PlayRound(ctx context.Context, g games.Game, req PlayRequest) 
 	return &result, nil
 }
 
-func (s *Service) checkAmount(g games.Game, amount int64) error {
-	min, max := s.minBet, s.maxBet
+// Bounds returns the bet range accepted for g: the game's own limits, capped
+// by the global ones.
+func (s *Service) Bounds(g games.Game) (min, max int64) {
+	min, max = s.minBet, s.maxBet
 	if v, ok := g.(games.MinBetter); ok && v.MinBet() > 0 {
 		min = v.MinBet()
 	}
 	if v, ok := g.(games.MaxBetter); ok && v.MaxBet() > 0 && v.MaxBet() < max {
 		max = v.MaxBet()
 	}
+	return min, max
+}
+
+func (s *Service) checkAmount(g games.Game, amount int64) error {
+	min, max := s.Bounds(g)
 	if amount <= 0 {
 		return fmt.Errorf("%w: la mise doit etre strictement positive", ErrInvalidBet)
 	}

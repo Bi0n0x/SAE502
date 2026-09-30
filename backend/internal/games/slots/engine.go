@@ -144,6 +144,8 @@ func (m *Machine) Description() string { return m.def.Description }
 func (m *Machine) MinBet() int64       { return m.def.MinBetCredits }
 func (m *Machine) MaxBet() int64       { return m.def.MaxBetCredits }
 
+func (m *Machine) Definition() Definition { return m.def }
+
 func (m *Machine) Config() map[string]any {
 	return map[string]any{
 		"type":            "slots",

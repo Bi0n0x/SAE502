@@ -2,6 +2,7 @@ package roulette
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -49,6 +50,10 @@ var kindByID = func() map[string]BetKind {
 	}
 	return m
 }()
+
+func BetKinds() []BetKind { return slices.Clone(betKinds) }
+
+func Color(n int) string { return color(n) }
 
 type Game struct{}
 
