@@ -1,0 +1,64 @@
+package views
+
+type AuthForm struct {
+	Register bool
+	Username string
+	Next     string
+	Error    string
+	Start    int64
+}
+
+templ AuthPage(p Page, f AuthForm) {
+	@Layout(p) {
+		<section class="auth">
+			<div class="panel auth-card">
+				if f.Register {
+					<p class="eyebrow">Inscription</p>
+					<h1>Créer un compte</h1>
+					<p class="muted">{ credits(f.Start) } crédits offerts pour commencer.</p>
+				} else {
+					<p class="eyebrow">Connexion</p>
+					<h1>Content de vous revoir</h1>
+				}
+				if f.Error != "" {
+					<p class="alert" role="alert">{ f.Error }</p>
+				}
+				<form method="post" class="stack">
+					<input type="hidden" name="suite" value={ f.Next }/>
+					<label class="field">
+						<span>Pseudo</span>
+						<input
+							name="username"
+							value={ f.Username }
+							required
+							minlength="3"
+							maxlength="32"
+							pattern="[A-Za-z0-9_\-]+"
+							autocomplete="username"
+							autofocus
+						/>
+					</label>
+					<label class="field">
+						<span>Mot de passe</span>
+						if f.Register {
+							<input name="password" type="password" required minlength="8" maxlength="128" autocomplete="new-password"/>
+							<small class="muted">8 caractères minimum.</small>
+						} else {
+							<input name="password" type="password" required autocomplete="current-password"/>
+						}
+					</label>
+					if f.Register {
+						<button class="btn wide" type="submit">Créer mon compte</button>
+					} else {
+						<button class="btn wide" type="submit">Se connecter</button>
+					}
+				</form>
+				if f.Register {
+					<p class="muted switch">Déjà inscrit ? <a href={ templ.SafeURL(withNext("/connexion", f.Next)) }>Se connecter</a></p>
+				} else {
+					<p class="muted switch">Pas encore de compte ? <a href={ templ.SafeURL(withNext("/inscription", f.Next)) }>Créer un compte</a></p>
+				}
+			</div>
+		</section>
+	}
+}

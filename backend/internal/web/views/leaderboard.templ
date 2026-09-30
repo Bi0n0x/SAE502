@@ -1,0 +1,67 @@
+package views
+
+type Metric struct {
+	Key   string
+	Label string
+}
+
+var Metrics = []Metric{
+	{"balance", "Solde"},
+	{"net", "Gains nets"},
+	{"rounds", "Parties"},
+	{"biggest_win", "Plus gros gain"},
+}
+
+templ LeaderboardPage(p Page, metric string, rows []LeaderRow) {
+	@Layout(p) {
+		<section class="panel">
+			<div class="side-head">
+				<div>
+					<p class="eyebrow">Tous les joueurs</p>
+					<h1>Classement</h1>
+				</div>
+				<nav class="tabs">
+					for _, m := range Metrics {
+						<a href={ templ.SafeURL("/classement?metric=" + m.Key) } class={ templ.KV("on", m.Key == metric) }>{ m.Label }</a>
+					}
+				</nav>
+			</div>
+			@leaderTable(rows, metric, false)
+		</section>
+	}
+}
+
+templ leaderTable(rows []LeaderRow, metric string, compact bool) {
+	if len(rows) == 0 {
+		<p class="muted">Personne n'a encore joué.</p>
+	} else {
+		<table class="table">
+			<thead>
+				<tr>
+					<th>#</th>
+					<th>Joueur</th>
+					<th class="num">Solde</th>
+					if !compact {
+						<th class="num">Parties</th>
+						<th class="num">Net</th>
+						<th class="num">Plus gros gain</th>
+					}
+				</tr>
+			</thead>
+			<tbody>
+				for _, r := range rows {
+					<tr class={ templ.KV("me", r.Me) }>
+						<td><span class={ "rank", "r" + itoa(r.Rank) }>{ itoa(r.Rank) }</span></td>
+						<td>{ r.Username }</td>
+						<td class={ "num", templ.KV("sorted", metric == "balance") }>{ credits(r.Balance) }</td>
+						if !compact {
+							<td class={ "num", templ.KV("sorted", metric == "rounds") }>{ i64(r.Rounds) }</td>
+							<td class={ "num", netClass(r.Net), templ.KV("sorted", metric == "net") }>{ signed(r.Net) }</td>
+							<td class={ "num", templ.KV("sorted", metric == "biggest_win") }>{ signed(r.BiggestWin) }</td>
+						}
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
+}

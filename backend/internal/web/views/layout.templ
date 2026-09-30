@@ -1,0 +1,95 @@
+package views
+
+import "github.com/casino-rt/backend/internal/web"
+
+templ Layout(p Page) {
+	<!DOCTYPE html>
+	<html lang="fr">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<meta name="color-scheme" content="dark"/>
+			<meta name="htmx-config" content='{"includeIndicatorStyles":false}'/>
+			<title>
+				if p.Title != "" {
+					{ p.Title } · Casino R&T
+				} else {
+					Casino R&T
+				}
+			</title>
+			<link rel="icon" href={ web.Asset("favicon.svg") } type="image/svg+xml"/>
+			<link rel="stylesheet" href={ web.Asset("app.css") }/>
+			<script src={ web.Asset("htmx.min.js") } defer></script>
+		</head>
+		<body>
+			<header class="top">
+				<a class="brand" href="/">
+					<span class="brand-chip" aria-hidden="true"></span>
+					<span>Casino <b>R&T</b></span>
+				</a>
+				<nav class="nav">
+					@navLink("/", "Jeux", p.Active == "jeux")
+					@navLink("/classement", "Classement", p.Active == "classement")
+					if p.User != nil {
+						@navLink("/profil", "Profil", p.Active == "profil")
+					}
+				</nav>
+				<div class="account">
+					if p.User != nil {
+						@Balance(*p.User, false)
+						<span class="who">{ p.User.Name }</span>
+						<form method="post" action="/deconnexion">
+							<button class="btn ghost small" type="submit">Déconnexion</button>
+						</form>
+					} else {
+						<a class="btn ghost small" href="/connexion">Connexion</a>
+						<a class="btn small" href="/inscription">Créer un compte</a>
+					}
+				</div>
+			</header>
+			<main class="wrap">
+				{ children... }
+			</main>
+			<footer class="foot">
+				Crédits fictifs, aucun argent réel. Projet SAE 5.02, BUT R&T.
+			</footer>
+		</body>
+	</html>
+}
+
+templ navLink(href, label string, active bool) {
+	<a href={ templ.SafeURL(href) } class={ templ.KV("on", active) }>{ label }</a>
+}
+
+// Balance is the credit chip in the header. With oob it is sent next to a game
+// stage so htmx swaps it in place.
+templ Balance(u User, oob bool) {
+	<span
+		id="balance"
+		class="balance"
+		title="Solde"
+		if oob {
+			hx-swap-oob="true"
+		}
+	>
+		<span class="coin" aria-hidden="true"></span>
+		if u.animated() {
+			<span class="roll" style={ css("--delay:%s", seconds(u.Delay)) }>
+				<span class="old">{ credits(u.Previous) }</span>
+				<span class={ "new", templ.KV("gain", u.Balance > u.Previous), templ.KV("loss", u.Balance < u.Previous) }>{ credits(u.Balance) }</span>
+			</span>
+		} else {
+			<span>{ credits(u.Balance) }</span>
+		}
+	</span>
+}
+
+templ ErrorPage(p Page, code int, message string) {
+	@Layout(p) {
+		<section class="panel empty">
+			<p class="eyebrow">Erreur { itoa(code) }</p>
+			<h1>{ message }</h1>
+			<a class="btn" href="/">Retour aux jeux</a>
+		</section>
+	}
+}

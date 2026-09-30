@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +18,13 @@ type Server struct {
 	db       *gorm.DB
 	sessions *auth.SessionStore
 	wallet   *wallet.Service
+	limits   limits
+}
+
+type limits struct {
+	global *keyLimiter
+	auth   *keyLimiter
+	play   *keyLimiter
 }
 
 func NewServer(cfg config.Config, db *gorm.DB, sessions *auth.SessionStore, w *wallet.Service) *Server {
@@ -41,19 +49,19 @@ func (s *Server) Router() *gin.Engine {
 	r.GET("/healthz", func(c *gin.Context) { c.JSON(http.StatusOK, gin.H{"status": "ok"}) })
 	r.GET("/readyz", s.handleReady)
 
-	globalLimiter := newIPLimiter(s.cfg.RateGlobalPerMin, 5*time.Minute)
+	s.limits = limits{
+		global: newIPLimiter(s.cfg.RateGlobalPerMin, 5*time.Minute),
+		auth:   newIPLimiter(s.cfg.RateAuthPerMin, 15*time.Minute),
+		play:   newKeyLimiter(s.cfg.RatePlayPerMin, 15*time.Minute),
+	}
 
-	authLimiter := newIPLimiter(s.cfg.RateAuthPerMin, 15*time.Minute)
-
-	playLimiter := newKeyLimiter(s.cfg.RatePlayPerMin, 15*time.Minute)
-
-	api := r.Group("/api", globalLimiter.middleware())
+	api := r.Group("/api", s.limits.global.middleware())
 
 	api.GET("/config", s.handleConfig)
 
 	authGroup := api.Group("/auth")
-	authGroup.POST("/register", authLimiter.middleware(), s.handleRegister)
-	authGroup.POST("/login", authLimiter.middleware(), s.handleLogin)
+	authGroup.POST("/register", s.limits.auth.middleware(), s.handleRegister)
+	authGroup.POST("/login", s.limits.auth.middleware(), s.handleLogin)
 	authGroup.POST("/logout", s.handleLogout)
 
 	api.GET("/games", s.handleListGames)
@@ -65,10 +73,16 @@ func (s *Server) Router() *gin.Engine {
 	private.GET("/me", s.handleMe)
 	private.GET("/me/history", s.handleHistory)
 	private.GET("/me/stats", s.handleStats)
-	private.POST("/games/:key/play", playLimiter.middlewareByUser(), s.handlePlay)
+	private.POST("/games/:key/play", s.limits.play.middlewareByUser(), s.handlePlay)
 
-	r.NoRoute(func(c *gin.Context) {
-		fail(c, http.StatusNotFound, "not_found", "route inconnue")
+	s.mountPages(r)
+
+	r.NoRoute(s.pageHeaders(), s.loadUser(), func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
+			fail(c, http.StatusNotFound, "not_found", "route inconnue")
+			return
+		}
+		s.pageError(c, http.StatusNotFound, "Cette page n'existe pas.")
 	})
 	return r
 }

@@ -1,0 +1,134 @@
+package views
+
+type Totals struct {
+	Rounds     int64
+	Wagered    int64
+	Won        int64
+	Net        int64
+	WinRate    float64
+	ReturnRate float64
+}
+
+type GameStat struct {
+	Name    string
+	Rounds  int64
+	Wagered int64
+	Net     int64
+	WinRate float64
+	BestWin int64
+}
+
+type HistoryRow struct {
+	When         string
+	Game         string
+	Bet          int64
+	Label        string
+	Net          int64
+	BalanceAfter int64
+}
+
+type Profile struct {
+	Balance int64
+	Total   Totals
+	PerGame []GameStat
+	History []HistoryRow
+	Page    int
+	Pages   int
+}
+
+templ ProfilePage(p Page, pr Profile) {
+	@Layout(p) {
+		<section class="hero slim">
+			<p class="eyebrow">Profil</p>
+			<h1>{ p.User.Name }</h1>
+		</section>
+		<section class="stats">
+			@stat("Solde", credits(pr.Balance), "")
+			@stat("Parties", i64(pr.Total.Rounds), "")
+			@stat("Misé", credits(pr.Total.Wagered), "")
+			@stat("Net", signed(pr.Total.Net), netClass(pr.Total.Net))
+			@stat("Taux de retour", percent(pr.Total.ReturnRate), "")
+			@stat("Parties gagnées", percent(pr.Total.WinRate), "")
+		</section>
+		if len(pr.PerGame) > 0 {
+			<section class="panel">
+				<h2>Par jeu</h2>
+				<table class="table">
+					<thead>
+						<tr>
+							<th>Jeu</th>
+							<th class="num">Parties</th>
+							<th class="num">Misé</th>
+							<th class="num">Net</th>
+							<th class="num">Gagnées</th>
+							<th class="num">Meilleur coup</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, g := range pr.PerGame {
+							<tr>
+								<td>{ g.Name }</td>
+								<td class="num">{ i64(g.Rounds) }</td>
+								<td class="num">{ credits(g.Wagered) }</td>
+								<td class={ "num", netClass(g.Net) }>{ signed(g.Net) }</td>
+								<td class="num">{ percent(g.WinRate) }</td>
+								<td class="num">{ signed(g.BestWin) }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</section>
+		}
+		<section class="panel">
+			<h2>Historique</h2>
+			if len(pr.History) == 0 {
+				<p class="muted">Aucune partie pour l'instant. <a href="/">Choisir un jeu</a></p>
+			} else {
+				<div class="scroll">
+					<table class="table">
+						<thead>
+							<tr>
+								<th>Date</th>
+								<th>Jeu</th>
+								<th class="num">Mise</th>
+								<th>Résultat</th>
+								<th class="num">Net</th>
+								<th class="num">Solde</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, h := range pr.History {
+								<tr>
+									<td class="muted">{ h.When }</td>
+									<td>{ h.Game }</td>
+									<td class="num">{ credits(h.Bet) }</td>
+									<td>{ h.Label }</td>
+									<td class={ "num", netClass(h.Net) }>{ signed(h.Net) }</td>
+									<td class="num">{ credits(h.BalanceAfter) }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+				if pr.Pages > 1 {
+					<nav class="pager">
+						if pr.Page > 1 {
+							<a class="btn ghost small" href={ templ.SafeURL("/profil?page=" + itoa(pr.Page-1)) }>← Plus récentes</a>
+						}
+						<span class="muted">Page { itoa(pr.Page) } / { itoa(pr.Pages) }</span>
+						if pr.Page < pr.Pages {
+							<a class="btn ghost small" href={ templ.SafeURL("/profil?page=" + itoa(pr.Page+1)) }>Plus anciennes →</a>
+						}
+					</nav>
+				}
+			}
+		</section>
+	}
+}
+
+templ stat(label, value, class string) {
+	<div class="panel stat">
+		<span class="muted">{ label }</span>
+		<b class={ class }>{ value }</b>
+	</div>
+}

@@ -1,0 +1,122 @@
+package views
+
+import "github.com/casino-rt/backend/internal/games/roulette"
+
+templ RoulettePage(p Page, st RouletteStage) {
+	@Layout(p) {
+		<div class="game-page">
+			@gameHead(st.Game.Name, st.Game.Description)
+			@RouletteStageView(st)
+			@rouletteRules()
+		</div>
+	}
+}
+
+templ RouletteSwap(st RouletteStage, u User) {
+	@RouletteStageView(st)
+	@Balance(u, true)
+}
+
+templ RouletteStageView(st RouletteStage) {
+	<section
+		id="stage"
+		class={ "stage", "roulette", templ.KV("spin", st.Spin != nil) }
+		style={ css("--settle:%s", seconds(spinSeconds)) }
+	>
+		<form
+			class="table-form"
+			method="post"
+			action={ templ.SafeURL("/jeux/" + st.Game.Key) }
+			hx-post={ "/jeux/" + st.Game.Key }
+			hx-target="#stage"
+			hx-swap="outerHTML"
+			hx-disabled-elt="find button"
+		>
+			<div class="wheel-box">
+				@wheel(st.Spin)
+				<div class="result" aria-live="polite">
+					if st.Error != "" {
+						<p class="alert" role="alert">{ st.Error }</p>
+					} else if st.Spin == nil {
+						<p class="muted">Choisissez une case sur le tapis, puis lancez la bille.</p>
+					} else {
+						<p class={ "pocket", st.Spin.Color }>{ itoa(st.Spin.Result) }</p>
+						if st.Spin.Won {
+							<p class="big up">{ signed(st.Spin.Payout - st.Spin.Bet) }</p>
+							<p class="muted">{ st.Spin.Option } · rendu { credits(st.Spin.Payout) }</p>
+						} else {
+							<p class="big down">{ signed(-st.Spin.Bet) }</p>
+							<p class="muted">Mise sur { st.Spin.Option } perdue</p>
+						}
+					}
+				</div>
+			</div>
+			<div class="felt">
+				<div class="board">
+					for _, c := range board {
+						<label
+							class={ "cell", c.Class, templ.KV("drawn", st.Spin != nil && c.Value == "number:"+itoa(st.Spin.Result)) }
+							style={ css("--wide:%s;--tall:%s", c.Wide, c.Tall) }
+						>
+							<input type="radio" name="option" value={ c.Value } checked?={ c.Value == st.Option } required/>
+							<span>{ c.Label }</span>
+						</label>
+					}
+				</div>
+			</div>
+			<div class="bet">
+				<input type="hidden" name="token" value={ st.Token }/>
+				<label class="field amount">
+					<span>Mise</span>
+					<input type="number" name="amount" value={ i64(st.Amount) } min={ i64(st.Game.MinBet) } max={ i64(st.Game.MaxBet) } step="1" required inputmode="numeric"/>
+				</label>
+				<button class="btn go" type="submit">Lancer la bille</button>
+			</div>
+		</form>
+	</section>
+}
+
+templ wheel(spin *RouletteSpin) {
+	<div class="wheel" aria-hidden="true">
+		<div
+			class="wheel-disc"
+			if spin != nil {
+				style={ css("--turn:%.2fdeg", spin.turn()) }
+			}
+		>
+			for i, n := range wheelOrder {
+				<span class={ "wn", pocketColor(n) } style={ css("--i:%d", i) }>{ itoa(n) }</span>
+			}
+		</div>
+		<div class="wheel-hub"></div>
+		<div class="ball-track">
+			<span class="ball"></span>
+		</div>
+		<span class="pointer"></span>
+	</div>
+}
+
+templ rouletteRules() {
+	<details class="panel rules">
+		<summary>Mises et gains</summary>
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Mise</th>
+					<th>Gagne si</th>
+					<th class="num">Rendu</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, k := range roulette.BetKinds() {
+					<tr>
+						<td>{ k.Label }</td>
+						<td class="muted">{ k.Description }</td>
+						<td class="num">×{ i64(k.Multiplier) }</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+		<p class="muted">Le rendu comprend la mise. Le zéro fait perdre toutes les mises sauf un plein sur 0.</p>
+	</details>
+}

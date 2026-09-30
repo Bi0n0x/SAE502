@@ -1,0 +1,81 @@
+package views
+
+type GameCard struct {
+	Key         string
+	Name        string
+	Description string
+	Kind        string
+	MinBet      int64
+	MaxBet      int64
+	RTP         float64
+	Volatility  string
+	Bg          string
+	Accent      string
+	Preview     []string
+}
+
+type LeaderRow struct {
+	Rank       int
+	Username   string
+	Balance    int64
+	Rounds     int64
+	Net        int64
+	BiggestWin int64
+	Me         bool
+}
+
+templ Lobby(p Page, cards []GameCard, top []LeaderRow, start int64) {
+	@Layout(p) {
+		<section class="hero">
+			<div>
+				<p class="eyebrow">Crédits fictifs · multijoueur</p>
+				if p.User != nil {
+					<h1>Bonne chance, { p.User.Name }.</h1>
+					<p class="lead">Choisissez une table. Votre solde est partagé entre tous les jeux.</p>
+				} else {
+					<h1>Le casino du département R&T.</h1>
+					<p class="lead">Créez un compte, recevez { credits(start) } crédits et affrontez les autres joueurs au classement.</p>
+					<div class="row">
+						<a class="btn" href="/inscription">Jouer maintenant</a>
+						<a class="btn ghost" href="/connexion">J'ai déjà un compte</a>
+					</div>
+				}
+			</div>
+		</section>
+		<div class="lobby">
+			<section class="games">
+				for _, g := range cards {
+					<a class="game-card" href={ templ.SafeURL("/jeux/" + g.Key) } style={ css("--g-bg:%s;--g-accent:%s", g.Bg, g.Accent) }>
+						<div class="game-art" aria-hidden="true">
+							if g.Kind == "roulette" {
+								<span class="mini-wheel"></span>
+							} else {
+								for _, e := range g.Preview {
+									<span>{ e }</span>
+								}
+							}
+						</div>
+						<div class="game-body">
+							<h2>{ g.Name }</h2>
+							<p>{ g.Description }</p>
+							<ul class="tags">
+								<li>Mise { credits(g.MinBet) }–{ credits(g.MaxBet) }</li>
+								<li>RTP { percent(g.RTP) }</li>
+								if g.Volatility != "" {
+									<li>Volatilité { g.Volatility }</li>
+								}
+							</ul>
+						</div>
+					</a>
+				}
+			</section>
+			<aside class="panel side">
+				<div class="side-head">
+					<h2>Classement</h2>
+					<a href="/classement" class="muted">Tout voir</a>
+				</div>
+				@leaderTable(top, "balance", true)
+			</aside>
+		</div>
+	}
+}

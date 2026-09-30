@@ -1,0 +1,146 @@
+package views
+
+templ SlotsPage(p Page, st SlotsStage) {
+	@Layout(p) {
+		<div class="game-page">
+			@gameHead(st.Game.Name, st.Game.Description)
+			@SlotsStageView(st)
+			@slotsPaytable(st.Game)
+		</div>
+	}
+}
+
+// SlotsSwap is what htmx receives after a spin: the new stage and the balance.
+templ SlotsSwap(st SlotsStage, u User) {
+	@SlotsStageView(st)
+	@Balance(u, true)
+}
+
+templ SlotsStageView(st SlotsStage) {
+	<section
+		id="stage"
+		class={ "stage", "slots", templ.KV("spin", st.Spin != nil) }
+		style={ css("--g-bg:%s;--g-accent:%s;--g-win:%s;--rows:%d;--settle:%s",
+			st.Game.Bg, st.Game.Accent, st.Game.Win, st.Game.Rows, seconds(st.Game.Settle())) }
+	>
+		<div class="machine">
+			<div class="reels">
+				for r, reel := range st.Reels {
+					<div class="reel">
+						<div class="strip" style={ css("--lead:%d;--d:%s", len(reel)-st.Game.Rows, seconds(st.Game.reelDuration(r))) }>
+							for _, c := range reel {
+								<span class={ "sym", templ.KV("hit", c.Hit) } style={ css("--c:%s", c.Symbol.Color) } title={ c.Symbol.Name }>{ c.Symbol.Emoji }</span>
+							}
+						</div>
+					</div>
+				}
+			</div>
+		</div>
+		<div class="result" aria-live="polite">
+			if st.Error != "" {
+				<p class="alert" role="alert">{ st.Error }</p>
+			} else if st.Spin == nil {
+				<p class="muted">{ itoa(len(st.Game.Paylines)) } lignes jouées à chaque tour. Mise de { credits(st.Game.MinBet) } à { credits(st.Game.MaxBet) } crédits.</p>
+			} else if st.Spin.Payout > 0 {
+				<p class="big win">{ credits(st.Spin.Payout) }</p>
+				<p class="muted">
+					crédits gagnés pour { credits(st.Spin.Bet) } misés ·
+					<span class={ netClass(st.Spin.Payout - st.Spin.Bet) }>net { signed(st.Spin.Payout - st.Spin.Bet) }</span>
+				</p>
+				<ul class="wins">
+					for _, w := range st.Spin.Lines {
+						<li>
+							Ligne { itoa(w.Line) } · { itoa(w.Count) } × { w.Symbol.Emoji } { w.Symbol.Name }
+							if w.WithWild {
+								<span class="tag">wild ×{ i64(st.Game.WildMultiplier) }</span>
+							}
+							<b>{ signed(w.Payout) }</b>
+						</li>
+					}
+					if st.Spin.ScatterWin > 0 {
+						<li>{ itoa(st.Spin.Scatters) } × { st.Game.Scatter.Emoji } { st.Game.Scatter.Name } <b>{ signed(st.Spin.ScatterWin) }</b></li>
+					}
+				</ul>
+			} else {
+				<p class="big down">{ signed(-st.Spin.Bet) }</p>
+				<p class="muted">{ st.Spin.Label }</p>
+			}
+		</div>
+		<form
+			class="bet"
+			method="post"
+			action={ templ.SafeURL("/jeux/" + st.Game.Key) }
+			hx-post={ "/jeux/" + st.Game.Key }
+			hx-target="#stage"
+			hx-swap="outerHTML"
+			hx-disabled-elt="find button"
+		>
+			<input type="hidden" name="token" value={ st.Token }/>
+			<label class="field amount">
+				<span>Mise</span>
+				<input type="number" name="amount" value={ i64(st.Amount) } min={ i64(st.Game.MinBet) } max={ i64(st.Game.MaxBet) } step="1" required inputmode="numeric"/>
+			</label>
+			<button class="btn go" type="submit">Lancer</button>
+		</form>
+	</section>
+}
+
+templ slotsPaytable(g *SlotsGame) {
+	<details class="panel rules">
+		<summary>Table des gains</summary>
+		<p class="muted">Gains en multiple de la mise, lus de gauche à droite sur une ligne.</p>
+		<table class="table pays">
+			<thead>
+				<tr>
+					<th>Symbole</th>
+					for _, p := range g.Pays[0].Pays {
+						<th class="num">{ itoa(p.Count) } alignés</th>
+					}
+				</tr>
+			</thead>
+			<tbody>
+				for _, row := range g.Pays {
+					<tr>
+						<td><span class="pay-sym">{ row.Symbol.Emoji }</span> { row.Symbol.Name }</td>
+						for _, p := range row.Pays {
+							<td class="num">{ multiplier(p.PerMille) }</td>
+						}
+					</tr>
+				}
+				if g.Scatter != nil && len(g.ScatterPays) > 0 {
+					<tr>
+						<td><span class="pay-sym">{ g.Scatter.Emoji }</span> { g.Scatter.Name }, n'importe où</td>
+						for _, p := range g.ScatterPays {
+							<td class="num">{ multiplier(p.PerMille) }</td>
+						}
+					</tr>
+				}
+			</tbody>
+		</table>
+		if g.WildMultiplier > 1 {
+			<p class="muted">Le wild remplace n'importe quel symbole et multiplie le gain de sa ligne par { i64(g.WildMultiplier) }.</p>
+		}
+		<h3>Lignes de paiement</h3>
+		<div class="lines">
+			for i, line := range g.Paylines {
+				<div class="line-map" style={ css("--cols:%d", len(line)) } title={ "Ligne " + itoa(i+1) }>
+					for row := 0; row < g.Rows; row++ {
+						for _, lit := range line {
+							<i class={ templ.KV("on", lit == row) }></i>
+						}
+					}
+					<b>{ itoa(i + 1) }</b>
+				</div>
+			}
+		</div>
+		<p class="muted">RTP théorique { percent(g.RTP) } · volatilité { g.Volatility }</p>
+	</details>
+}
+
+templ gameHead(name, description string) {
+	<div class="game-head">
+		<a href="/" class="back">← Tous les jeux</a>
+		<h1>{ name }</h1>
+		<p class="muted">{ description }</p>
+	</div>
+}
