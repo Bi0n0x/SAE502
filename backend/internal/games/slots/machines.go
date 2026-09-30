@@ -23,7 +23,7 @@ func neon777() Definition {
 	return Definition{
 		Key:         "neon777",
 		Name:        "Neon 777",
-		Description: "Machine 5 rouleaux, 3 lignes, 5 lignes de paiement. Le wild double le gain de la ligne ou il apparait.",
+		Description: "Machine 5 rouleaux, 3 lignes, 5 lignes de paiement. Le wild double le gain de la ligne où il apparaît.",
 
 		Rows:  3,
 		Reels: repeatStrip(strip, 5),
@@ -79,7 +79,7 @@ func cyberJungle() Definition {
 	return Definition{
 		Key:         "cyberjungle",
 		Name:        "Cyber Jungle",
-		Description: "5 rouleaux, 9 lignes. Le wild triple la ligne, et 3 scatters ou plus paient sans etre alignes.",
+		Description: "5 rouleaux, 9 lignes. Le wild triple la ligne, et 3 scatters ou plus paient sans être alignés.",
 
 		Rows:  3,
 		Reels: repeatStrip(strip, 5),
@@ -100,7 +100,7 @@ func cyberJungle() Definition {
 			{ID: "monkey", Name: "Singe", Emoji: "\U0001F412", Color: "#bb8a52"},
 			{ID: "tiger", Name: "Tigre", Emoji: "\U0001F42F", Color: "#f2994a"},
 			{ID: "totem", Name: "Totem", Emoji: "\U0001F5FF", Color: "#56ccf2"},
-			{ID: "idol", Name: "Idole d'or", Emoji: "\U0001F5FF", Color: "#f2c94c"},
+			{ID: "idol", Name: "Idole d'or", Emoji: "\U0001F451", Color: "#f2c94c"},
 			{ID: "wild", Name: "Wild Cyber", Emoji: "⚡", Color: "#9b51e0", Wild: true},
 			{ID: "scatter", Name: "Scatter", Emoji: "\U0001F4A0", Color: "#2f80ed", Scatter: true},
 		},
@@ -126,6 +126,6 @@ func cyberJungle() Definition {
 		MinBetCredits:  1,
 		MaxBetCredits:  300,
 		TheoreticalRTP: 0.9292,
-		Volatility:     "faible a moyenne",
+		Volatility:     "faible à moyenne",
 	}
 }

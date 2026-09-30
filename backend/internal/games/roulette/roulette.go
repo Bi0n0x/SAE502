@@ -60,9 +60,9 @@ type Game struct{}
 func New() *Game { return &Game{} }
 
 func (g *Game) Key() string  { return "roulette" }
-func (g *Game) Name() string { return "Roulette europeenne" }
+func (g *Game) Name() string { return "Roulette européenne" }
 func (g *Game) Description() string {
-	return "Roue a 37 cases, un seul zero. Misez sur une couleur, une parite, une douzaine, une colonne ou un numero plein."
+	return "Roue à 37 cases, un seul zéro. Misez sur une couleur, une parité, une douzaine, une colonne ou un numéro plein."
 }
 
 func (g *Game) Config() map[string]any {
