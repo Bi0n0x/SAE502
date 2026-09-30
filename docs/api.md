@@ -1,7 +1,8 @@
 # API
 
-Base `/api`. nginx sert le front et l'API sur la même origine, donc appels en
-relatif et pas de CORS à gérer.
+Base `/api`. Le site est rendu côté serveur et n'a pas besoin de cette API :
+elle sert aux scripts, aux tests et à tout autre client. Elle est sur la même
+origine que le site, donc appels en relatif et pas de CORS à gérer.
 
 La session est un cookie `HttpOnly`, donc il faut `credentials: "same-origin"`
 dans les `fetch`, sinon rien ne marche.

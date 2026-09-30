@@ -27,7 +27,7 @@ docker compose --profile tunnel up -d --build
 docker compose logs -f api
 ```
 
-## Développer sur le back seul
+## Développer sans Docker
 
 ```bash
 cd deploy && docker compose up -d db
@@ -37,10 +37,25 @@ export COOKIE_SECURE=false
 go run ./cmd/api
 ```
 
-L'API écoute sur http://localhost:8080. Les tables sont créées au démarrage.
+Le site et l'API écoutent sur http://localhost:8080. Les tables sont créées au
+démarrage.
 
 Si un PostgreSQL tourne déjà sur la machine, mettre `DB_PORT=5433` dans le
 `.env` et adapter le port dans `DATABASE_URL`.
+
+## Modifier l'interface
+
+Les pages sont des composants [templ](https://templ.guide) dans
+`backend/internal/web/views`, le style est dans
+`backend/internal/web/static/app.css`. Après avoir touché un `.templ` :
+
+```bash
+cd backend
+go generate ./internal/web/views
+```
+
+Les fichiers `*_templ.go` générés sont commités, l'image Docker n'a donc pas
+besoin de templ.
 
 ## Tests
 
@@ -86,13 +101,15 @@ go test ./internal/games/... -run TestRTP -v
 Une machine à sous, c'est une `Definition` dans
 `backend/internal/games/slots/machines.go` : les rouleaux, les symboles avec
 leurs wilds et scatters, les lignes de paiement, la table de gains et le thème.
-Rien d'autre à toucher, elle apparaît toute seule dans l'API.
+Rien d'autre à toucher, elle apparaît toute seule dans l'API et sur le site.
 
 Après avoir changé une table de gains, relancer le test de RTP et reporter la
 valeur dans `TheoreticalRTP`.
 
 Pour un autre type de jeu, implémenter `games.Game` et l'enregistrer dans
-`backend/internal/games/catalog`.
+`backend/internal/games/catalog`. Côté site, il faut en plus sa vue dans
+`backend/internal/web/views` et un cas dans `gameStage`
+(`backend/internal/httpapi/page_handlers.go`).
 
 Le blackjack n'est pas fait. L'interface pour les jeux qui durent plusieurs
 requêtes est dans `backend/internal/games/stateful.go`.

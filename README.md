@@ -46,7 +46,7 @@ jeu et sa place au classement.
 
 | | |
 |---|---|
-| Interface | HTML / CSS / JavaScript |
+| Interface | Rendu serveur en Go avec templ, htmx, CSS |
 | API | Go 1.25, Gin |
 | Base | PostgreSQL 16, GORM |
 | Déploiement | Docker Compose sur NAS |
@@ -54,8 +54,14 @@ jeu et sa place au classement.
 
 ## Comment ça marche
 
-Le navigateur parle à nginx, qui sert l'interface et relaie `/api` vers l'API
-Go. L'API est la seule à toucher à PostgreSQL. cloudflared ouvre un tunnel
+Le navigateur parle à nginx, qui relaie tout vers le serveur Go. Ce serveur
+rend les pages HTML et expose aussi une API JSON sous `/api`. Il est le seul à
+toucher à PostgreSQL.
+
+L'interface n'a pas de JavaScript maison. Les formulaires marchent tels quels,
+et htmx remplace seulement la zone de jeu après une mise, sans recharger la
+page. Les rouleaux et la roue sont animés en CSS à partir du vrai tirage : le
+serveur place la bande de chaque rouleau et calcule l'angle d'arrêt de la roue. cloudflared ouvre un tunnel
 sortant vers Cloudflare, donc aucun port n'est ouvert sur la box et
 l'administration du NAS reste injoignable depuis l'extérieur.
 
