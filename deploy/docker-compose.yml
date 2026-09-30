@@ -74,7 +74,7 @@ services:
         condition: service_started
     command: tunnel --no-autoupdate run
     environment:
-      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?see .env}
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
     networks: [front]
 
 volumes:
