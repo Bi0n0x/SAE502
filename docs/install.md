@@ -39,6 +39,9 @@ go run ./cmd/api
 
 L'API écoute sur http://localhost:8080. Les tables sont créées au démarrage.
 
+Si un PostgreSQL tourne déjà sur la machine, mettre `DB_PORT=5433` dans le
+`.env` et adapter le port dans `DATABASE_URL`.
+
 ## Tests
 
 ```bash
