@@ -47,7 +47,7 @@ jeu et sa place au classement.
 | | |
 |---|---|
 | Interface | HTML / CSS / JavaScript |
-| API | Go 1.23, Gin |
+| API | Go 1.25, Gin |
 | Base | PostgreSQL 16, GORM |
 | Déploiement | Docker Compose sur NAS |
 | Accès Internet | nginx + Cloudflare Tunnel, HTTPS |
