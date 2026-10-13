@@ -36,3 +36,10 @@ var versions = func() map[string]string {
 func Asset(name string) string {
 	return "/static/" + name + "?v=" + versions[name]
 }
+
+// Has reports whether a static file exists, for assets that depend on data
+// such as the artwork of a game.
+func Has(name string) bool {
+	_, ok := versions[name]
+	return ok
+}

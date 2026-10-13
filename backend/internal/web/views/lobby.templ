@@ -26,56 +26,88 @@ type LeaderRow struct {
 
 templ Lobby(p Page, cards []GameCard, top []LeaderRow, start int64) {
 	@Layout(p) {
-		<section class="hero">
-			<div>
-				<p class="eyebrow">Crédits fictifs · multijoueur</p>
+		<section class="lobby-hero">
+			<div class="lobby-intro">
 				if p.User != nil {
-					<h1>Bonne chance, { p.User.Name }.</h1>
+					<p class="kicker kicker-plain">Bonne chance, { p.User.Name }.</p>
+					<h1 class="balance-big"><b>{ credits(p.User.Balance) }</b> <span>crédits</span></h1>
 					<p class="lead">Choisissez une table. Votre solde est partagé entre tous les jeux.</p>
 				} else {
-					<h1>Le casino du département R&T.</h1>
+					<p class="kicker">Crédits fictifs · multijoueur</p>
+					<h1>Le casino du département <b>R&T</b>.</h1>
 					<p class="lead">Créez un compte, recevez { credits(start) } crédits et affrontez les autres joueurs au classement.</p>
-					<div class="row">
-						<a class="btn" href="/inscription">Jouer maintenant</a>
-						<a class="btn ghost" href="/connexion">J'ai déjà un compte</a>
+					<div class="lobby-actions">
+						<a class="btn btn-primary btn-lg" href="/inscription">Jouer maintenant</a>
+						<a class="btn btn-secondary btn-lg" href="/connexion">J'ai déjà un compte</a>
 					</div>
 				}
 			</div>
-		</section>
-		<div class="lobby">
-			<section class="games">
-				for _, g := range cards {
-					<a class="game-card" href={ templ.SafeURL("/jeux/" + g.Key) } style={ css("--g-bg:%s;--g-accent:%s", g.Bg, g.Accent) }>
-						<div class="game-art" aria-hidden="true">
-							if g.Kind == "roulette" {
-								<span class="mini-wheel"></span>
-							} else {
-								for _, e := range g.Preview {
-									<span>{ e }</span>
-								}
-							}
-						</div>
-						<div class="game-body">
-							<h2>{ g.Name }</h2>
-							<p>{ g.Description }</p>
-							<ul class="tags">
-								<li>Mise { credits(g.MinBet) }–{ credits(g.MaxBet) }</li>
-								<li>RTP { percent(g.RTP) }</li>
-								if g.Volatility != "" {
-									<li>Volatilité { g.Volatility }</li>
-								}
-							</ul>
-						</div>
-					</a>
-				}
-			</section>
-			<aside class="panel side">
-				<div class="side-head">
+			<aside class="top-board">
+				<div class="top-head">
 					<h2>Classement</h2>
-					<a href="/classement" class="muted">Tout voir</a>
+					<a href="/classement">Tout voir</a>
 				</div>
-				@leaderTable(top, "balance", true)
+				if p.User != nil {
+					@topList(top)
+				} else {
+					@topList(top[:min(3, len(top))])
+				}
 			</aside>
-		</div>
+		</section>
+		<section class={ "games", templ.KV("compact", p.User != nil) }>
+			if p.User == nil {
+				<h2>Jeux</h2>
+			}
+			<div class="game-grid">
+				for _, g := range cards {
+					@gameCard(g, p.User != nil)
+				}
+			</div>
+		</section>
 	}
+}
+
+templ topList(rows []LeaderRow) {
+	if len(rows) == 0 {
+		<p class="muted">Personne n'a encore joué.</p>
+	} else {
+		<ol class="top-list">
+			for _, r := range rows {
+				<li class={ templ.KV("me", r.Me) }>
+					<span class="pos">{ rank(r.Rank) }</span>
+					<span class="name">{ r.Username }</span>
+					<span class="chips">{ credits(r.Balance) }</span>
+				</li>
+			}
+		</ol>
+	}
+}
+
+templ gameCard(g GameCard, compact bool) {
+	<a class="game-card" data-game={ g.Key } href={ templ.SafeURL("/jeux/" + g.Key) }>
+		<div class="game-art" aria-hidden="true">
+			if art := gameArt(g.Key); art != "" {
+				<img src={ art } alt="" loading="lazy"/>
+			} else {
+				for _, e := range g.Preview {
+					<span>{ e }</span>
+				}
+			}
+		</div>
+		<div class="game-body">
+			<span class="kind">{ kindLabel(g.Kind) }</span>
+			<h3>{ g.Name }</h3>
+			if !compact {
+				<p>{ g.Description }</p>
+			}
+			<div class="tags">
+				<span class="tag tag-game">Mise { credits(g.MinBet) }–{ credits(g.MaxBet) }</span>
+				<span class="tag tag-game">RTP { percent(g.RTP) }</span>
+				if g.Volatility != "" {
+					<span class="tag tag-game">Volatilité { g.Volatility }</span>
+				}
+			</div>
+			<span class="btn btn-game">Jouer</span>
+		</div>
+	</a>
 }

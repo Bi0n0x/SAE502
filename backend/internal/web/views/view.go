@@ -12,6 +12,8 @@ import (
 	"strings"
 
 	"github.com/a-h/templ"
+
+	"github.com/casino-rt/backend/internal/web"
 )
 
 type User struct {
@@ -94,6 +96,25 @@ func multiplier(perMille int64) string {
 }
 
 func itoa(n int) string { return strconv.Itoa(n) }
+
+// rank pads a leaderboard position to two digits.
+func rank(n int) string { return fmt.Sprintf("%02d", n) }
+
+func kindLabel(kind string) string {
+	if kind == "slots" {
+		return "Machine à sous"
+	}
+	return "Table"
+}
+
+// gameArt is the artwork of a game, or "" when it has none yet.
+func gameArt(key string) string {
+	name := "img/jeu-" + key + ".webp"
+	if !web.Has(name) {
+		return ""
+	}
+	return web.Asset(name)
+}
 
 func i64(n int64) string { return strconv.FormatInt(n, 10) }
 
