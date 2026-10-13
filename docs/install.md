@@ -47,7 +47,7 @@ Si un PostgreSQL tourne déjà sur la machine, mettre `DB_PORT=5433` dans le
 
 Les pages sont des composants [templ](https://templ.guide) dans
 `backend/internal/web/views`, le style est dans
-`backend/internal/web/static/app.css`. Après avoir touché un `.templ` :
+`backend/internal/web/static/casino-rt.css`. Après avoir touché un `.templ` :
 
 ```bash
 cd backend

@@ -1,7 +1,7 @@
 package views
 
 templ SlotsPage(p Page, st SlotsStage) {
-	@Layout(p) {
+	@Layout(p.forGame(st.Game.Key)) {
 		<div class="game-page">
 			@gameHead(st.Game.Name, st.Game.Description)
 			@SlotsStageView(st)

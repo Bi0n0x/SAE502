@@ -28,6 +28,31 @@ type Page struct {
 	Title  string
 	Active string
 	User   *User
+
+	// Game is the key of the game the page belongs to. It selects the colour
+	// theme of the whole page.
+	Game string
+}
+
+func (p Page) forGame(key string) Page {
+	p.Game = key
+	return p
+}
+
+// initials is what the avatar shows: the first letter of the first two parts
+// of the name, or its first two letters when it has a single part.
+func initials(name string) string {
+	parts := strings.FieldsFunc(name, func(r rune) bool { return r == '_' || r == '-' || r == '.' })
+	var out []rune
+	switch len(parts) {
+	case 0:
+	case 1:
+		out = []rune(parts[0])
+		out = out[:min(2, len(out))]
+	default:
+		out = []rune{[]rune(parts[0])[0], []rune(parts[1])[0]}
+	}
+	return strings.ToUpper(string(out))
 }
 
 func (u *User) animated() bool { return u.Delay > 0 && u.Previous != u.Balance }

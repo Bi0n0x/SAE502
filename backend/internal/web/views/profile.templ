@@ -41,6 +41,9 @@ templ ProfilePage(p Page, pr Profile) {
 		<section class="hero slim">
 			<p class="eyebrow">Profil</p>
 			<h1>{ p.User.Name }</h1>
+			<form method="post" action="/deconnexion">
+				<button class="btn btn-secondary" type="submit">Déconnexion</button>
+			</form>
 		</section>
 		<section class="stats">
 			@stat("Solde", credits(pr.Balance), "")

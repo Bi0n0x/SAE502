@@ -18,32 +18,43 @@ templ Layout(p Page) {
 				}
 			</title>
 			<link rel="icon" href={ web.Asset("favicon.svg") } type="image/svg+xml"/>
-			<link rel="stylesheet" href={ web.Asset("app.css") }/>
+			<link rel="preload" href="/static/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin/>
+			<link rel="stylesheet" href={ web.Asset("casino-rt.css") }/>
 			<script src={ web.Asset("htmx.min.js") } defer></script>
 		</head>
-		<body>
+		<body
+			if p.Game != "" {
+				data-game={ p.Game }
+			}
+		>
 			<header class="top">
-				<a class="brand" href="/">
-					<span class="brand-chip" aria-hidden="true"></span>
+				<a class="logo" href="/">
+					<img src={ web.Asset("img/logo.webp") } alt="" width="28" height="28"/>
 					<span>Casino <b>R&T</b></span>
 				</a>
 				<nav class="nav">
 					@navLink("/", "Jeux", p.Active == "jeux")
 					@navLink("/classement", "Classement", p.Active == "classement")
-					if p.User != nil {
-						@navLink("/profil", "Profil", p.Active == "profil")
+					if p.User == nil {
+						<a href="/connexion">Connexion</a>
 					}
 				</nav>
 				<div class="account">
 					if p.User != nil {
 						@Balance(*p.User, false)
-						<span class="who">{ p.User.Name }</span>
-						<form method="post" action="/deconnexion">
-							<button class="btn ghost small" type="submit">Déconnexion</button>
-						</form>
+						<a
+							class="who"
+							href="/profil"
+							title="Profil"
+							if p.Active == "profil" {
+								aria-current="page"
+							}
+						>
+							<span class="avatar" aria-hidden="true">{ initials(p.User.Name) }</span>
+							<span class="name">{ p.User.Name }</span>
+						</a>
 					} else {
-						<a class="btn ghost small" href="/connexion">Connexion</a>
-						<a class="btn small" href="/inscription">Créer un compte</a>
+						<a class="btn btn-primary" href="/inscription">Créer un compte</a>
 					}
 				</div>
 			</header>
@@ -58,7 +69,12 @@ templ Layout(p Page) {
 }
 
 templ navLink(href, label string, active bool) {
-	<a href={ templ.SafeURL(href) } class={ templ.KV("on", active) }>{ label }</a>
+	<a
+		href={ templ.SafeURL(href) }
+		if active {
+			aria-current="page"
+		}
+	>{ label }</a>
 }
 
 // Balance is the credit chip in the header. With oob it is sent next to a game
@@ -66,13 +82,13 @@ templ navLink(href, label string, active bool) {
 templ Balance(u User, oob bool) {
 	<span
 		id="balance"
-		class="balance"
+		class="credits"
 		title="Solde"
 		if oob {
 			hx-swap-oob="true"
 		}
 	>
-		<span class="coin" aria-hidden="true"></span>
+		<img class="coin" src={ web.Asset("img/coin.webp") } alt="" width="16" height="16"/>
 		if u.animated() {
 			<span class="roll" style={ css("--delay:%s", seconds(u.Delay)) }>
 				<span class="old">{ credits(u.Previous) }</span>

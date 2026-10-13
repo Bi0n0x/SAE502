@@ -3,7 +3,7 @@ package views
 import "github.com/casino-rt/backend/internal/games/roulette"
 
 templ RoulettePage(p Page, st RouletteStage) {
-	@Layout(p) {
+	@Layout(p.forGame(st.Game.Key)) {
 		<div class="game-page">
 			@gameHead(st.Game.Name, st.Game.Description)
 			@RouletteStageView(st)
