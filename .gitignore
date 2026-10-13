@@ -15,3 +15,6 @@ Thumbs.db
 *.log
 .idea/
 .vscode/
+
+# Visuels bruts, seuls les WebP de static/img sont versionnés
+docs/assets/
