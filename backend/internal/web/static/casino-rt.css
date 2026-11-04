@@ -725,6 +725,118 @@ img { max-width: 100%; }
   box-shadow: inset 0 0 0 1px var(--color-accent-800);
 }
 
+/* A titled block of the page */
+
+.block { display: flex; flex-direction: column; gap: 14px; margin-top: 40px; }
+.block > h2 { margin: 0; font-size: 20px; }
+
+/* Profile */
+
+.profile-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 16px 28px;
+  padding: clamp(16px, 4vw, 40px) 0 32px;
+}
+.avatar-xl {
+  width: 76px;
+  height: 76px;
+  font-size: 26px;
+  background: linear-gradient(135deg, var(--color-accent-700), var(--color-accent-900));
+  box-shadow: 0 0 0 1px var(--color-accent-700), 0 12px 32px -12px var(--color-accent);
+}
+.profile-id { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.profile-id h1 { margin: 0; font-size: clamp(32px, 5vw, 48px); letter-spacing: -.035em; overflow-wrap: anywhere; }
+.profile-balance { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.profile-balance span { font-size: 12px; }
+.profile-balance b {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--gold-300);
+}
+.profile-balance b::before { content: ""; width: .7em; height: .7em; background: url("img/coin.webp") center / contain no-repeat; }
+.profile-out { margin: 0; }
+
+.stats {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 18px 20px;
+  border-radius: 10px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+.stat > span { font-size: 12px; color: var(--color-neutral-400); }
+.stat b { font-size: 24px; font-weight: 500; line-height: 1.2; letter-spacing: -.01em; }
+.stat small { font-size: 12px; }
+.stat-net { background: linear-gradient(160deg, var(--color-surface-2), var(--color-surface)); }
+.stat-net b { font-size: 32px; }
+.stat-net.up { background: linear-gradient(160deg, var(--win-800), var(--color-surface) 70%); }
+.stat-net.down { background: linear-gradient(160deg, var(--loss-800), var(--color-surface) 70%); }
+.stat-net.up b { color: var(--win); }
+.stat-net.down b { color: var(--loss); }
+
+.meter { display: block; height: 4px; margin-top: 4px; border-radius: 2px; background: var(--color-neutral-800); overflow: hidden; }
+.meter i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--color-accent-700), var(--color-accent)); }
+
+.history { min-width: 640px; }
+.history td:first-child { white-space: nowrap; }
+.game-stats { min-width: 600px; }
+
+.pager { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 4px; }
+.pager-pos { font-size: 14px; color: var(--color-neutral-400); }
+.pager-pos b { font-weight: 500; color: var(--color-text); }
+
+@media (max-width: 900px) {
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat-net { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+  .profile-head { grid-template-columns: auto minmax(0, 1fr); padding-bottom: 24px; }
+  .avatar-xl { width: 56px; height: 56px; font-size: 19px; }
+  .profile-balance { grid-column: 1 / -1; flex-direction: row; align-items: baseline; justify-content: space-between; padding: 14px 16px; border-radius: 10px; background: var(--color-surface); box-shadow: inset 0 0 0 1px var(--gold-800); }
+  .profile-out { grid-column: 1 / -1; }
+  .profile-out .btn { width: 100%; min-height: 44px; }
+  .stat { padding: 14px 16px; }
+  .stat b { font-size: 20px; }
+  .stat-net b { font-size: 28px; }
+  .block { margin-top: 32px; }
+  .pager { justify-content: space-between; gap: 8px; }
+  .pager .btn { min-height: 44px; padding: 7px 12px; }
+  .pager-pos { order: -1; width: 100%; text-align: center; }
+  .pager { flex-wrap: wrap; }
+
+  /* Tables turn into one card per row, labelled by data-label */
+  .history, .game-stats { min-width: 0; }
+  :is(.history, .game-stats) thead { display: none; }
+  :is(.history, .game-stats) tbody tr { display: grid; gap: 4px 12px; padding: 12px 8px; }
+  :is(.history, .game-stats) td { padding: 0; }
+  :is(.history, .game-stats) td[data-label]::before { content: attr(data-label) " "; color: var(--color-neutral-500); }
+
+  .history tbody tr { grid-template: "game net" "result bal" "when bet" / minmax(0, 1fr) auto; }
+  .history td:nth-child(1) { grid-area: when; font-size: 12px; }
+  .history td:nth-child(2) { grid-area: game; font-weight: 500; }
+  .history td:nth-child(3) { grid-area: bet; font-size: 12px; color: var(--color-neutral-400); }
+  .history td:nth-child(4) { grid-area: result; }
+  .history td:nth-child(5) { grid-area: net; font-weight: 500; }
+  .history td:nth-child(6) { grid-area: bal; font-size: 12px; color: var(--color-neutral-400); }
+
+  .game-stats tbody tr { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .game-stats td:first-child { grid-column: 1 / -1; margin-bottom: 4px; font-weight: 500; }
+  .game-stats td.num { text-align: left; font-size: 13px; }
+}
+
 /* ------------------------------------------------------------------------
    Screens not rebuilt yet. Everything below keeps the previous markup
    working on the new tokens and goes away as each screen is redone.
@@ -782,27 +894,10 @@ main input:not([type="radio"]):not(.input) {
   width: 100%;
 }
 
-main .panel { margin-bottom: 1.25rem; }
-.panel.empty { text-align: center; padding: 3rem 1.5rem; }
 .alert { margin-bottom: 0; }
 
-.pager { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1rem; }
-
-.hero { padding: 1.5rem 0 2rem; }
-.hero.slim { padding-bottom: 1rem; }
 
 
-/* Profile */
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: .75rem;
-  margin-bottom: 1.25rem;
-}
-.stat { display: grid; gap: .2rem; margin: 0; }
-.stat span { font-size: .8rem; }
-.stat b { font-size: 1.45rem; font-variant-numeric: tabular-nums; }
 
 /* Game pages */
 

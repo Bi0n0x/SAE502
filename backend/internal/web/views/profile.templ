@@ -38,65 +38,81 @@ type Profile struct {
 
 templ ProfilePage(p Page, pr Profile) {
 	@Layout(p) {
-		<section class="hero slim">
-			<p class="eyebrow">Profil</p>
-			<h1>{ p.User.Name }</h1>
-			<form method="post" action="/deconnexion">
+		<section class="profile-head">
+			<span class="avatar avatar-xl" aria-hidden="true">{ initials(p.User.Name) }</span>
+			<div class="profile-id">
+				<p class="kicker">Profil</p>
+				<h1>{ p.User.Name }</h1>
+			</div>
+			<div class="profile-balance">
+				<span class="muted">Solde</span>
+				<b>{ credits(pr.Balance) }</b>
+			</div>
+			<form method="post" action="/deconnexion" class="profile-out">
 				<button class="btn btn-secondary" type="submit">Déconnexion</button>
 			</form>
 		</section>
-		<section class="stats">
-			@stat("Solde", credits(pr.Balance), "")
+		<section class="stats" aria-label="Statistiques">
+			<div class={ "stat", "stat-net", netClass(pr.Total.Net) }>
+				<span>Net</span>
+				<b>{ signed(pr.Total.Net) }</b>
+				<small class="muted">sur { credits(pr.Total.Wagered) } misés</small>
+			</div>
 			@stat("Parties", i64(pr.Total.Rounds), "")
 			@stat("Misé", credits(pr.Total.Wagered), "")
-			@stat("Net", signed(pr.Total.Net), netClass(pr.Total.Net))
 			@stat("Taux de retour", percent(pr.Total.ReturnRate), "")
-			@stat("Parties gagnées", percent(pr.Total.WinRate), "")
+			<div class="stat">
+				<span>Parties gagnées</span>
+				<b>{ percent(pr.Total.WinRate) }</b>
+				@meter(pr.Total.WinRate)
+			</div>
 		</section>
 		if len(pr.PerGame) > 0 {
-			<section class="panel">
+			<section class="block">
 				<h2>Par jeu</h2>
-				<table class="table">
-					<thead>
-						<tr>
-							<th>Jeu</th>
-							<th class="num">Parties</th>
-							<th class="num">Misé</th>
-							<th class="num">Net</th>
-							<th class="num">Gagnées</th>
-							<th class="num">Meilleur coup</th>
-						</tr>
-					</thead>
-					<tbody>
-						for _, g := range pr.PerGame {
-							<tr>
-								<td>{ g.Name }</td>
-								<td class="num">{ i64(g.Rounds) }</td>
-								<td class="num">{ credits(g.Wagered) }</td>
-								<td class={ "num", netClass(g.Net) }>{ signed(g.Net) }</td>
-								<td class="num">{ percent(g.WinRate) }</td>
-								<td class="num">{ signed(g.BestWin) }</td>
-							</tr>
-						}
-					</tbody>
-				</table>
-			</section>
-		}
-		<section class="panel">
-			<h2>Historique</h2>
-			if len(pr.History) == 0 {
-				<p class="muted">Aucune partie pour l'instant. <a href="/">Choisir un jeu</a></p>
-			} else {
-				<div class="scroll">
-					<table class="table">
+				<div class="panel panel-flush scroll">
+					<table class="table game-stats">
 						<thead>
 							<tr>
-								<th>Date</th>
-								<th>Jeu</th>
-								<th class="num">Mise</th>
-								<th>Résultat</th>
-								<th class="num">Net</th>
-								<th class="num">Solde</th>
+								<th scope="col">Jeu</th>
+								<th scope="col" class="num">Parties</th>
+								<th scope="col" class="num">Misé</th>
+								<th scope="col" class="num">Net</th>
+								<th scope="col" class="num">Gagnées</th>
+								<th scope="col" class="num">Meilleur coup</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, g := range pr.PerGame {
+								<tr>
+									<td>{ g.Name }</td>
+									<td class="num" data-label="Parties">{ i64(g.Rounds) }</td>
+									<td class="num" data-label="Misé">{ credits(g.Wagered) }</td>
+									<td class={ "num", netClass(g.Net) } data-label="Net">{ signed(g.Net) }</td>
+									<td class="num" data-label="Gagnées">{ percent(g.WinRate) }</td>
+									<td class="num" data-label="Meilleur coup">{ signed(g.BestWin) }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</section>
+		}
+		<section class="block" id="historique">
+			<h2>Historique</h2>
+			if len(pr.History) == 0 {
+				@emptyState("Aucune partie pour l'instant.", "Vos parties s'afficheront ici, avec le solde après chaque mise.", "/", "Choisir un jeu")
+			} else {
+				<div class="panel panel-flush scroll">
+					<table class="table history">
+						<thead>
+							<tr>
+								<th scope="col">Date</th>
+								<th scope="col">Jeu</th>
+								<th scope="col" class="num">Mise</th>
+								<th scope="col">Résultat</th>
+								<th scope="col" class="num">Net</th>
+								<th scope="col" class="num">Solde</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -104,23 +120,27 @@ templ ProfilePage(p Page, pr Profile) {
 								<tr>
 									<td class="muted">{ h.When }</td>
 									<td>{ h.Game }</td>
-									<td class="num">{ credits(h.Bet) }</td>
-									<td>{ h.Label }</td>
+									<td class="num" data-label="Mise">{ credits(h.Bet) }</td>
+									<td><span class={ "tag", outcomeTag(h.Net) }>{ h.Label }</span></td>
 									<td class={ "num", netClass(h.Net) }>{ signed(h.Net) }</td>
-									<td class="num">{ credits(h.BalanceAfter) }</td>
+									<td class="num" data-label="Solde">{ credits(h.BalanceAfter) }</td>
 								</tr>
 							}
 						</tbody>
 					</table>
 				</div>
 				if pr.Pages > 1 {
-					<nav class="pager">
+					<nav class="pager" aria-label="Pages de l'historique">
 						if pr.Page > 1 {
-							<a class="btn ghost small" href={ templ.SafeURL("/profil?page=" + itoa(pr.Page-1)) }>← Plus récentes</a>
+							<a class="btn btn-secondary" rel="prev" href={ templ.SafeURL("/profil?page=" + itoa(pr.Page-1) + "#historique") }><span aria-hidden="true">←</span> Plus récentes</a>
+						} else {
+							<span class="btn btn-secondary" aria-disabled="true"><span aria-hidden="true">←</span> Plus récentes</span>
 						}
-						<span class="muted">Page { itoa(pr.Page) } / { itoa(pr.Pages) }</span>
+						<span class="pager-pos">Page <b>{ itoa(pr.Page) }</b> sur { itoa(pr.Pages) }</span>
 						if pr.Page < pr.Pages {
-							<a class="btn ghost small" href={ templ.SafeURL("/profil?page=" + itoa(pr.Page+1)) }>Plus anciennes →</a>
+							<a class="btn btn-secondary" rel="next" href={ templ.SafeURL("/profil?page=" + itoa(pr.Page+1) + "#historique") }>Plus anciennes <span aria-hidden="true">→</span></a>
+						} else {
+							<span class="btn btn-secondary" aria-disabled="true">Plus anciennes <span aria-hidden="true">→</span></span>
 						}
 					</nav>
 				}
@@ -130,8 +150,13 @@ templ ProfilePage(p Page, pr Profile) {
 }
 
 templ stat(label, value, class string) {
-	<div class="panel stat">
-		<span class="muted">{ label }</span>
+	<div class="stat">
+		<span>{ label }</span>
 		<b class={ class }>{ value }</b>
 	</div>
+}
+
+// meter draws a share between 0 and 1 as a thin bar.
+templ meter(share float64) {
+	<span class="meter" aria-hidden="true"><i style={ css("width:%.1f%%", min(max(share, 0), 1)*100) }></i></span>
 }
