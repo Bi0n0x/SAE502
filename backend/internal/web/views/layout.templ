@@ -102,10 +102,16 @@ templ Balance(u User, oob bool) {
 
 templ ErrorPage(p Page, code int, message string) {
 	@Layout(p) {
-		<section class="panel empty">
-			<p class="eyebrow">Erreur { itoa(code) }</p>
+		<section class="error-page">
+			<p class="error-code" aria-hidden="true">{ itoa(code) }</p>
+			<p class="kicker">Erreur { itoa(code) }</p>
 			<h1>{ message }</h1>
-			<a class="btn" href="/">Retour aux jeux</a>
+			<div class="lobby-actions">
+				<a class="btn btn-primary btn-lg" href="/">Retour aux jeux</a>
+				if p.User == nil {
+					<a class="btn btn-secondary btn-lg" href="/connexion">Connexion</a>
+				}
+			</div>
 		</section>
 	}
 }

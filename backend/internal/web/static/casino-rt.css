@@ -837,60 +837,37 @@ img { max-width: 100%; }
   .game-stats td.num { text-align: left; font-size: 13px; }
 }
 
-/* ------------------------------------------------------------------------
-   Screens not rebuilt yet. Everything below keeps the previous markup
-   working on the new tokens and goes away as each screen is redone.
-   ------------------------------------------------------------------------ */
+/* Error page: the status code as a large faded figure behind the message */
 
-:root {
-  --bg: var(--color-bg);
-  --panel: var(--color-surface);
-  --panel-2: var(--color-surface-2);
-  --line: #e9e9ed14;
-  --line-2: var(--color-divider);
-  --text: var(--color-text);
-  --muted: var(--color-neutral-400);
-  --accent: var(--color-accent);
-  --good: var(--win);
-  --bad: var(--loss);
+.error-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: clamp(48px, 12vw, 120px) 0;
+  text-align: center;
+  isolation: isolate;
 }
-
-main h1, main h2, main h3 { margin: 0 0 .5rem; }
-main h1 { font-size: clamp(1.7rem, 4vw, 2.6rem); }
-main h2 { font-size: 1.15rem; }
-main h3 { font-size: 1rem; margin-top: 1.25rem; }
-main p { margin: 0 0 .75rem; }
-
-.eyebrow {
-  color: var(--color-accent-300);
-  font-size: 11px;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  margin-bottom: .4rem;
+.error-page h1 { max-width: 640px; margin: 0; font-size: clamp(28px, 4.4vw, 44px); letter-spacing: -.03em; text-wrap: balance; }
+.error-page .lobby-actions { justify-content: center; }
+.error-code {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font-size: clamp(160px, 32vw, 340px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -.06em;
+  color: transparent;
+  background: linear-gradient(180deg, var(--color-accent-800), transparent 80%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  user-select: none;
 }
-.stack { display: grid; gap: 1rem; }
-
-.btn:not([class*="btn-"]) { color: var(--color-accent); border-color: var(--color-accent); }
-.btn:not([class*="btn-"]):hover { background: #9184d91f; }
-.btn.ghost:not([class*="btn-"]) { color: var(--color-text); border-color: var(--color-divider); }
-.btn.ghost:not([class*="btn-"]):hover { background: #e9e9ed12; }
-.btn.wide { width: 100%; min-height: 48px; }
-
-main input:not([type="radio"]):not(.input) {
-  font: inherit;
-  color: var(--color-text);
-  background: var(--color-surface);
-  border: 1px solid var(--color-divider);
-  border-radius: var(--radius-md);
-  padding: 8px 12px;
-  min-height: 44px;
-  width: 100%;
-}
-
-.alert { margin-bottom: 0; }
-
-
-
 
 /* Game pages */
 
