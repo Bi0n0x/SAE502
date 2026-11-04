@@ -3,7 +3,14 @@ package views
 templ SlotsPage(p Page, st SlotsStage) {
 	@Layout(p.forGame(st.Game.Key)) {
 		<div class="game-page">
-			@gameHead(st.Game.Name, st.Game.Description)
+			@gameHead(st.Game.Name, st.Game.Description) {
+				<span class="tag tag-game">Machine à sous</span>
+				<span class="tag tag-game">Mise { credits(st.Game.MinBet) }–{ credits(st.Game.MaxBet) }</span>
+				<span class="tag tag-game">RTP { percent(st.Game.RTP) }</span>
+				if st.Game.Volatility != "" {
+					<span class="tag tag-game">Volatilité { st.Game.Volatility }</span>
+				}
+			}
 			@SlotsStageView(st)
 			@slotsPaytable(st.Game)
 		</div>
@@ -42,26 +49,33 @@ templ SlotsStageView(st SlotsStage) {
 			} else if st.Spin == nil {
 				<p class="muted">{ itoa(len(st.Game.Paylines)) } lignes jouées à chaque tour. Mise de { credits(st.Game.MinBet) } à { credits(st.Game.MaxBet) } crédits.</p>
 			} else if st.Spin.Payout > 0 {
+				<p class="result-kicker">Gagné</p>
 				<p class="big win">{ credits(st.Spin.Payout) }</p>
 				<p class="muted">
-					crédits gagnés pour { credits(st.Spin.Bet) } misés ·
+					crédits pour { credits(st.Spin.Bet) } misés ·
 					<span class={ netClass(st.Spin.Payout - st.Spin.Bet) }>net { signed(st.Spin.Payout - st.Spin.Bet) }</span>
 				</p>
 				<ul class="wins">
 					for _, w := range st.Spin.Lines {
 						<li>
-							Ligne { itoa(w.Line) } · { itoa(w.Count) } × { w.Symbol.Emoji } { w.Symbol.Name }
+							<span class="wins-line">Ligne { itoa(w.Line) }</span>
+							<span>{ itoa(w.Count) } × { w.Symbol.Emoji } { w.Symbol.Name }</span>
 							if w.WithWild {
-								<span class="tag">wild ×{ i64(st.Game.WildMultiplier) }</span>
+								<span class="tag tag-gold">wild ×{ i64(st.Game.WildMultiplier) }</span>
 							}
 							<b>{ signed(w.Payout) }</b>
 						</li>
 					}
 					if st.Spin.ScatterWin > 0 {
-						<li>{ itoa(st.Spin.Scatters) } × { st.Game.Scatter.Emoji } { st.Game.Scatter.Name } <b>{ signed(st.Spin.ScatterWin) }</b></li>
+						<li>
+							<span class="wins-line">Scatter</span>
+							<span>{ itoa(st.Spin.Scatters) } × { st.Game.Scatter.Emoji } { st.Game.Scatter.Name }</span>
+							<b>{ signed(st.Spin.ScatterWin) }</b>
+						</li>
 					}
 				</ul>
 			} else {
+				<p class="result-kicker">Perdu</p>
 				<p class="big down">{ signed(-st.Spin.Bet) }</p>
 				<p class="muted">{ st.Spin.Label }</p>
 			}
@@ -76,11 +90,8 @@ templ SlotsStageView(st SlotsStage) {
 			hx-disabled-elt="find button"
 		>
 			<input type="hidden" name="token" value={ st.Token }/>
-			<label class="field amount">
-				<span>Mise</span>
-				<input type="number" name="amount" value={ i64(st.Amount) } min={ i64(st.Game.MinBet) } max={ i64(st.Game.MaxBet) } step="1" required inputmode="numeric"/>
-			</label>
-			<button class="btn go" type="submit">Lancer</button>
+			@betAmount(st.Amount, st.Game.MinBet, st.Game.MaxBet)
+			<button class="btn go" type="submit"><span>Lancer</span></button>
 		</form>
 	</section>
 }
@@ -89,34 +100,36 @@ templ slotsPaytable(g *SlotsGame) {
 	<details class="panel rules">
 		<summary>Table des gains</summary>
 		<p class="muted">Gains en multiple de la mise, lus de gauche à droite sur une ligne.</p>
-		<table class="table pays">
-			<thead>
-				<tr>
-					<th>Symbole</th>
-					for _, p := range g.Pays[0].Pays {
-						<th class="num">{ itoa(p.Count) } alignés</th>
+		<div class="scroll">
+			<table class="table pays">
+				<thead>
+					<tr>
+						<th>Symbole</th>
+						for _, p := range g.Pays[0].Pays {
+							<th class="num">{ itoa(p.Count) } alignés</th>
+						}
+					</tr>
+				</thead>
+				<tbody>
+					for _, row := range g.Pays {
+						<tr>
+							<td><span class="pay-sym">{ row.Symbol.Emoji }</span> { row.Symbol.Name }</td>
+							for _, p := range row.Pays {
+								<td class="num">{ multiplier(p.PerMille) }</td>
+							}
+						</tr>
 					}
-				</tr>
-			</thead>
-			<tbody>
-				for _, row := range g.Pays {
-					<tr>
-						<td><span class="pay-sym">{ row.Symbol.Emoji }</span> { row.Symbol.Name }</td>
-						for _, p := range row.Pays {
-							<td class="num">{ multiplier(p.PerMille) }</td>
-						}
-					</tr>
-				}
-				if g.Scatter != nil && len(g.ScatterPays) > 0 {
-					<tr>
-						<td><span class="pay-sym">{ g.Scatter.Emoji }</span> { g.Scatter.Name }, n'importe où</td>
-						for _, p := range g.ScatterPays {
-							<td class="num">{ multiplier(p.PerMille) }</td>
-						}
-					</tr>
-				}
-			</tbody>
-		</table>
+					if g.Scatter != nil && len(g.ScatterPays) > 0 {
+						<tr>
+							<td><span class="pay-sym">{ g.Scatter.Emoji }</span> { g.Scatter.Name }, n'importe où</td>
+							for _, p := range g.ScatterPays {
+								<td class="num">{ multiplier(p.PerMille) }</td>
+							}
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
 		if g.WildMultiplier > 1 {
 			<p class="muted">Le wild remplace n'importe quel symbole et multiplie le gain de sa ligne par { i64(g.WildMultiplier) }.</p>
 		}
@@ -137,10 +150,23 @@ templ slotsPaytable(g *SlotsGame) {
 	</details>
 }
 
+// gameHead is the title of a game page; the children are its tags.
 templ gameHead(name, description string) {
 	<div class="game-head">
-		<a href="/" class="back">← Tous les jeux</a>
+		<a href="/" class="back"><span aria-hidden="true">←</span> Tous les jeux</a>
 		<h1>{ name }</h1>
-		<p class="muted">{ description }</p>
+		<p class="lead">{ description }</p>
+		<div class="tags">
+			{ children... }
+		</div>
 	</div>
+}
+
+// betAmount is the stake field shared by the games.
+templ betAmount(amount, lo, hi int64) {
+	<label class="field amount">
+		<span>Mise</span>
+		<input class="input" type="number" name="amount" value={ i64(amount) } min={ i64(lo) } max={ i64(hi) } step="1" required inputmode="numeric"/>
+		<small class="hint">{ credits(lo) } à { credits(hi) }</small>
+	</label>
 }
