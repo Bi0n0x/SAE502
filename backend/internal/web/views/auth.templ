@@ -1,5 +1,7 @@
 package views
 
+import "github.com/casino-rt/backend/internal/web"
+
 type AuthForm struct {
 	Register bool
 	Username string
@@ -11,23 +13,28 @@ type AuthForm struct {
 templ AuthPage(p Page, f AuthForm) {
 	@Layout(p) {
 		<section class="auth">
-			<div class="panel auth-card">
-				if f.Register {
-					<p class="eyebrow">Inscription</p>
-					<h1>Créer un compte</h1>
-					<p class="muted">{ credits(f.Start) } crédits offerts pour commencer.</p>
-				} else {
-					<p class="eyebrow">Connexion</p>
-					<h1>Content de vous revoir</h1>
-				}
+			<div class="auth-card">
+				<header class="auth-head">
+					if f.Register {
+						<p class="kicker">Inscription</p>
+						<h1>Créer un compte</h1>
+						<p class="muted">Un pseudo, un mot de passe, et { credits(f.Start) } crédits pour commencer.</p>
+					} else {
+						<p class="kicker">Connexion</p>
+						<h1>Content de vous revoir</h1>
+						<p class="muted">Votre solde et votre place au classement vous attendent.</p>
+					}
+				</header>
 				if f.Error != "" {
-					<p class="alert" role="alert">{ f.Error }</p>
+					<p class="alert" id="auth-error" role="alert">{ f.Error }</p>
 				}
-				<form method="post" class="stack">
+				<form method="post" class="auth-form">
 					<input type="hidden" name="suite" value={ f.Next }/>
-					<label class="field">
-						<span>Pseudo</span>
+					<div class="field">
+						<label for="username">Pseudo</label>
 						<input
+							class="input"
+							id="username"
 							name="username"
 							value={ f.Username }
 							required
@@ -35,30 +42,67 @@ templ AuthPage(p Page, f AuthForm) {
 							maxlength="32"
 							pattern="[A-Za-z0-9_\-]+"
 							autocomplete="username"
+							autocapitalize="none"
+							spellcheck="false"
+							if f.Error != "" {
+								aria-invalid="true"
+								aria-describedby="auth-error"
+							} else if f.Register {
+								aria-describedby="username-hint"
+							}
 							autofocus
 						/>
-					</label>
-					<label class="field">
-						<span>Mot de passe</span>
 						if f.Register {
-							<input name="password" type="password" required minlength="8" maxlength="128" autocomplete="new-password"/>
-							<small class="muted">8 caractères minimum.</small>
-						} else {
-							<input name="password" type="password" required autocomplete="current-password"/>
+							<small class="hint" id="username-hint">3 à 32 caractères : lettres, chiffres, - et _.</small>
 						}
-					</label>
+					</div>
+					<div class="field">
+						<label for="password">Mot de passe</label>
+						if f.Register {
+							<input class="input" id="password" name="password" type="password" required minlength="8" maxlength="128" autocomplete="new-password" aria-describedby="password-hint"/>
+							<small class="hint" id="password-hint">8 caractères minimum.</small>
+						} else {
+							<input
+								class="input"
+								id="password"
+								name="password"
+								type="password"
+								required
+								autocomplete="current-password"
+								if f.Error != "" {
+									aria-invalid="true"
+									aria-describedby="auth-error"
+								}
+							/>
+						}
+					</div>
 					if f.Register {
-						<button class="btn wide" type="submit">Créer mon compte</button>
+						<button class="btn btn-primary btn-lg btn-block" type="submit">Créer mon compte</button>
 					} else {
-						<button class="btn wide" type="submit">Se connecter</button>
+						<button class="btn btn-primary btn-lg btn-block" type="submit">Se connecter</button>
 					}
 				</form>
-				if f.Register {
-					<p class="muted switch">Déjà inscrit ? <a href={ templ.SafeURL(withNext("/connexion", f.Next)) }>Se connecter</a></p>
-				} else {
-					<p class="muted switch">Pas encore de compte ? <a href={ templ.SafeURL(withNext("/inscription", f.Next)) }>Créer un compte</a></p>
-				}
+				<p class="auth-switch muted">
+					if f.Register {
+						Déjà inscrit ? <a href={ templ.SafeURL(withNext("/connexion", f.Next)) }>Se connecter</a>
+					} else {
+						Pas encore de compte ? <a href={ templ.SafeURL(withNext("/inscription", f.Next)) }>Créer un compte</a>
+					}
+				</p>
 			</div>
+			<aside class="auth-side">
+				if f.Register {
+					<img src={ web.Asset("img/bonus.webp") } alt="" width="96" height="96"/>
+					<p class="auth-gift" aria-hidden="true"><b>{ credits(f.Start) }</b> crédits offerts</p>
+				} else {
+					<img class="auth-card-art" src={ web.Asset("img/carte-dos.webp") } alt="" width="113" height="168"/>
+				}
+				<ul class="auth-perks">
+					<li>Un seul solde pour toutes les tables</li>
+					<li>Classement en direct entre joueurs</li>
+					<li>Crédits fictifs, aucun argent réel</li>
+				</ul>
+			</aside>
 		</section>
 	}
 }

@@ -335,14 +335,36 @@ img { max-width: 100%; }
 .input:hover { border-color: var(--color-neutral-600); }
 .input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
 .input[aria-invalid="true"] { border-color: var(--loss); }
+.input:user-invalid { border-color: var(--loss); }
+.hint { font-size: 12px; color: var(--color-neutral-500); }
 
 .alert {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
   margin: 0;
   padding: 10px 14px;
   border-radius: var(--radius-md);
   font-size: 14px;
+  text-align: left;
   background: var(--loss-800);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--loss) 30%, transparent);
   color: var(--loss-300);
+}
+.alert::before {
+  content: "!";
+  content: "!" / "";
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--loss);
+  color: var(--loss-800);
+  font-size: 12px;
+  font-weight: 600;
+  transform: translateY(3px);
 }
 
 /* Tables: row rules fade out at both ends */
@@ -506,6 +528,58 @@ img { max-width: 100%; }
   .compact .btn { display: none; }
 }
 
+/* Sign in and sign up: the form on a surface, the artwork on a warm glow */
+
+.auth {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 360px);
+  width: min(880px, 100%);
+  margin: clamp(8px, 4vw, 48px) auto 0;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm), 0 24px 60px -30px #000;
+}
+.auth-card { display: flex; flex-direction: column; gap: 24px; padding: clamp(24px, 5vw, 48px); }
+.auth-head { display: flex; flex-direction: column; gap: 10px; }
+.auth-head h1 { font-size: clamp(28px, 4vw, 36px); letter-spacing: -.03em; }
+.auth-head p { margin: 0; }
+.auth-form { display: flex; flex-direction: column; gap: 18px; }
+.auth-form .btn { margin-top: 6px; }
+.auth-switch { margin: 0; font-size: 14px; }
+
+.auth-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px 32px;
+  background:
+    radial-gradient(120% 70% at 50% 30%, var(--color-glow-warm) 0%, transparent 70%),
+    linear-gradient(180deg, var(--color-accent-900), var(--color-surface-2));
+  box-shadow: inset 1px 0 0 var(--color-divider);
+  text-align: center;
+}
+.auth-side img { width: 96px; height: auto; filter: drop-shadow(0 12px 24px #0009); }
+.auth-side .auth-card-art { width: 113px; transform: rotate(-6deg); }
+.auth-gift { margin: -8px 0 0; color: var(--gold-300); font-size: 15px; }
+.auth-gift b { display: block; font-size: 40px; font-weight: 500; line-height: 1.1; color: var(--gold); }
+.auth-perks { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; font-size: 14px; color: var(--color-neutral-300); text-align: left; }
+.auth-perks li { display: flex; align-items: baseline; gap: 10px; }
+.auth-perks li::before { content: ""; flex: none; width: 6px; height: 6px; transform: translateY(-2px) rotate(45deg); background: var(--gold); }
+
+@media (max-width: 760px) {
+  .auth { grid-template-columns: minmax(0, 1fr); }
+  .auth-side { order: -1; flex-direction: row; justify-content: flex-start; gap: 16px; padding: 16px 24px; box-shadow: inset 0 -1px 0 var(--color-divider); text-align: left; }
+  .auth-side img { width: 56px; }
+  .auth-side .auth-card-art { width: 40px; }
+  .auth-gift { margin: 0; }
+  .auth-gift b { display: inline; font-size: 17px; }
+  .auth-perks { display: none; }
+  .auth-side:not(:has(.auth-gift)) { display: none; }
+}
+
 /* ------------------------------------------------------------------------
    Screens not rebuilt yet. Everything below keeps the previous markup
    working on the new tokens and goes away as each screen is redone.
@@ -603,13 +677,6 @@ main .panel { margin-bottom: 1.25rem; }
 }
 .side-head h2, .side-head h1 { margin: 0; }
 .side-head a.muted { font-size: .9rem; text-decoration: none; }
-
-/* Auth */
-
-.auth { display: grid; place-items: center; padding: 2rem 0; }
-.auth-card { width: min(420px, 100%); }
-.auth-card .alert { margin-bottom: 1rem; }
-.switch { margin: 1.25rem 0 0; text-align: center; }
 
 /* Profile */
 
