@@ -27,12 +27,13 @@ templ Layout(p Page) {
 				data-game={ p.Game }
 			}
 		>
+			<a class="skip" href="#contenu">Aller au contenu</a>
 			<header class="top">
 				<a class="logo" href="/">
 					<img src={ web.Asset("img/logo.webp") } alt="" width="28" height="28"/>
 					<span>Casino <b>R&T</b></span>
 				</a>
-				<nav class="nav">
+				<nav class="nav" aria-label="Navigation principale">
 					@navLink("/", "Jeux", p.Active == "jeux")
 					@navLink("/classement", "Classement", p.Active == "classement")
 					if p.User == nil {
@@ -58,7 +59,7 @@ templ Layout(p Page) {
 					}
 				</div>
 			</header>
-			<main class="wrap">
+			<main class="wrap" id="contenu" tabindex="-1">
 				{ children... }
 			</main>
 			<footer class="foot">
@@ -89,9 +90,10 @@ templ Balance(u User, oob bool) {
 		}
 	>
 		<img class="coin" src={ web.Asset("img/coin.webp") } alt="" width="16" height="16"/>
+		<span class="sr-only">Solde :</span>
 		if u.animated() {
 			<span class="roll" style={ css("--delay:%s", seconds(u.Delay)) }>
-				<span class="old">{ credits(u.Previous) }</span>
+				<span class="old" aria-hidden="true">{ credits(u.Previous) }</span>
 				<span class={ "new", templ.KV("gain", u.Balance > u.Previous), templ.KV("loss", u.Balance < u.Previous) }>{ credits(u.Balance) }</span>
 			</span>
 		} else {
