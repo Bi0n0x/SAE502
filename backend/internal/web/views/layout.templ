@@ -21,6 +21,7 @@ templ Layout(p Page) {
 			<link rel="preload" href="/static/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin/>
 			<link rel="stylesheet" href={ web.Asset("casino-rt.css") }/>
 			<script src={ web.Asset("htmx.min.js") } defer></script>
+			<script src={ web.Asset("casino-rt.js") } defer></script>
 		</head>
 		<body
 			if p.Game != "" {

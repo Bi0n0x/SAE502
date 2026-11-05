@@ -335,9 +335,14 @@ main:focus { outline: none; }
 }
 .btn:hover { color: var(--color-text); }
 .btn:disabled, .btn[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
-.btn-primary { color: var(--color-accent); border-color: var(--color-accent); }
-.btn-primary:hover { color: var(--color-accent); background: #9184d91f; }
-.btn-primary:active { background: #9184d938; }
+.btn-primary {
+  color: #17142a;
+  background: linear-gradient(180deg, var(--color-accent-400), var(--color-accent));
+  border-color: var(--color-accent-400);
+  box-shadow: 0 8px 24px -12px var(--color-accent);
+}
+.btn-primary:hover { color: #17142a; background: linear-gradient(180deg, var(--color-accent-300), var(--color-accent-400)); }
+.btn-primary:active { background: var(--color-accent); }
 .btn-secondary { border-color: var(--color-divider); }
 .btn-secondary:hover { background: #e9e9ed12; }
 .btn-gold { color: var(--gold-300); border-color: var(--gold); }
@@ -457,7 +462,7 @@ main:focus { outline: none; }
   display: grid;
   grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
   gap: 48px;
-  align-items: end;
+  align-items: center;
   padding: 64px 0 56px;
 }
 .lobby-intro { display: flex; flex-direction: column; gap: 20px; }
@@ -487,7 +492,15 @@ main:focus { outline: none; }
 }
 .balance-big span { font-size: 18px; letter-spacing: 0; color: var(--color-neutral-400); }
 
-.top-board { display: flex; flex-direction: column; gap: 6px; padding-bottom: 6px; }
+.top-board {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px 14px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(160deg, #ffffff0a, #ffffff03);
+  box-shadow: var(--shadow-sm);
+}
 .top-head { display: flex; align-items: baseline; gap: 12px; }
 .top-board .top-head h2 {
   flex: 1;
@@ -514,6 +527,8 @@ main:focus { outline: none; }
 .top-list .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .top-list .chips { color: var(--gold-300); }
 .top-list .me .name { color: var(--color-accent-300); }
+.top-list li:last-child { background: none; }
+.top-more { margin-top: 4px !important; font-size: 13px; }
 
 .games { display: flex; flex-direction: column; gap: 20px; }
 .games > h2 { margin: 0; font-size: 22px; }
@@ -538,7 +553,6 @@ main:focus { outline: none; }
 }
 .game-card:active { transform: translateY(-1px); }
 .game-card:hover .game-art img { transform: scale(1.03); }
-.game-card:hover .btn-game { background: color-mix(in srgb, var(--game-accent) 14%, transparent); }
 
 .game-art {
   position: relative;
@@ -557,20 +571,18 @@ main:focus { outline: none; }
 .game-body h3 { margin: 0; font-size: 19px; letter-spacing: 0; line-height: 1.3; }
 .game-body p { margin: 0; font-size: 13px; color: var(--color-neutral-400); }
 .game-body .tags { flex: 1; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; }
-.game-body .btn { align-self: flex-start; margin-top: 8px; }
 
 /* Signed in: shorter cards, the name and the button share a line */
 .compact .game-art { aspect-ratio: 16 / 9; margin: 10px 12px 2px; }
 .compact .game-body {
   display: grid;
-  grid-template: "kind cta" auto "name cta" auto "tags tags" 1fr / minmax(0, 1fr) auto;
+  grid-template: "kind" auto "name" auto "tags" 1fr / minmax(0, 1fr);
   gap: 2px 10px;
   padding: 8px 16px 16px;
 }
 .compact .kind { grid-area: kind; }
 .compact h3 { grid-area: name; font-size: 17px; }
 .compact .tags { grid-area: tags; margin-top: 8px; }
-.compact .btn { grid-area: cta; align-self: center; margin: 0; }
 
 @media (max-width: 900px) {
   .lobby-hero { grid-template-columns: minmax(0, 1fr); gap: 32px; padding: 40px 0; }
@@ -593,11 +605,9 @@ main:focus { outline: none; }
   .games:not(.compact) .game-card::before { content: none; }
   .games:not(.compact) .game-art { width: 116px; aspect-ratio: 1; margin: 0; flex: none; font-size: 24px; gap: 4px; }
   .games:not(.compact) .game-body { padding: 0; gap: 6px; }
-  .games:not(.compact) .btn { display: none; }
 
   .compact .game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .compact .game-body { display: flex; padding: 6px 14px 14px; }
-  .compact .btn { display: none; }
 }
 
 /* Sign in and sign up: the form on a surface, the artwork on a warm glow */
@@ -1006,6 +1016,23 @@ main:focus { outline: none; }
 .amount .input:focus-visible { border-color: var(--g-win); outline-color: var(--g-win); }
 .amount .hint { position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; text-align: center; }
 
+.stake-keys { display: flex; gap: 6px; }
+.stake-keys[hidden] { display: none; }
+.stake-keys .btn {
+  min-width: 48px;
+  min-height: 56px;
+  padding: 6px 10px;
+  border-color: color-mix(in srgb, var(--g-win) 22%, transparent);
+  background: color-mix(in srgb, var(--color-bg) 55%, transparent);
+  color: var(--color-neutral-200);
+}
+.stake-keys .btn:hover { border-color: color-mix(in srgb, var(--g-win) 55%, transparent); color: var(--gold-300); }
+.stake-keys .btn:active { transform: translateY(1px); }
+
+/* Roulette: the chosen pocket, in words, above the stake */
+.pick { flex-basis: 100%; margin: 0 0 2px; text-align: center; font-size: 14px; color: var(--color-neutral-400); }
+.pick b { font-weight: 500; color: var(--gold-300); }
+
 .btn.go {
   position: relative;
   min-height: 56px;
@@ -1065,7 +1092,34 @@ main:focus { outline: none; }
 .result-kicker { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-neutral-400); }
 .big { font-size: clamp(36px, 6vw, 52px); font-weight: 500; line-height: 1.05; letter-spacing: -.02em; }
 .big.win { color: var(--g-win); text-shadow: 0 0 28px color-mix(in srgb, var(--g-win) 55%, transparent); }
-.big.down { color: var(--loss); }
+.big.down {
+  font-size: clamp(28px, 4vw, 36px);
+  color: color-mix(in srgb, var(--loss-300) 70%, var(--color-neutral-400));
+}
+
+/* A paying round: the stage lights up and coins fly out of the amount */
+.won { animation: won-glow 1.6s ease var(--settle) both; }
+@keyframes won-glow {
+  25% { box-shadow: 0 0 0 1px var(--g-win), 0 0 60px -10px var(--g-win), 0 30px 80px -40px #000; }
+}
+.big.win { animation: won-pop .6s cubic-bezier(.3, 1.6, .5, 1) var(--settle) both; }
+@keyframes won-pop { from { transform: scale(.6); opacity: 0; } }
+.result { position: relative; }
+.burst { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
+.burst i {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  margin: -11px;
+  background: url("img/coin.webp") center / contain no-repeat;
+  opacity: 0;
+  animation: coin 1.1s cubic-bezier(.2, .7, .3, 1) var(--settle) both;
+}
+@keyframes coin {
+  0% { opacity: 1; transform: rotate(var(--a)) translateY(0) scale(.4); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--r) * -1.6px)) scale(1) rotate(200deg); }
+}
 
 .wins { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; font-size: 14px; }
 .wins li {
@@ -1143,6 +1197,10 @@ main:focus { outline: none; }
   .amount .input { min-height: 48px; font-size: 20px; }
   .amount .hint { display: none; }
   .btn.go { min-height: 48px; }
+  .bet { flex-wrap: wrap; }
+  .stake-keys { order: 3; flex-basis: 100%; }
+  .stake-keys .btn { flex: 1; min-height: 40px; }
+  .pick { font-size: 13px; }
   .wheel-box .result { min-height: 6rem; }
   .amount { flex: 1; align-items: stretch; }
   .amount .input { width: 100%; }
@@ -1154,7 +1212,17 @@ main:focus { outline: none; }
 
 /* Slots */
 
-.slots { --cell: clamp(3.3rem, 14vw, 6rem); }
+.slots { --cell: clamp(3.3rem, 14vw, 7.5rem); }
+@media (min-width: 1000px) {
+  .slots {
+    grid-template-columns: auto minmax(240px, 320px);
+    justify-content: center;
+    align-items: center;
+    column-gap: clamp(32px, 4vw, 56px);
+  }
+  .slots .bet { grid-column: 1 / -1; }
+  .slots .result { min-height: calc(var(--cell) * var(--rows)); }
+}
 
 .machine {
   position: relative;
@@ -1250,7 +1318,10 @@ main:focus { outline: none; }
 @media (max-width: 900px) { .table-form { grid-template-columns: minmax(0, 1fr); } }
 
 .wheel-box { display: grid; justify-items: center; gap: 16px; }
-.wheel-box .result { max-width: 320px; min-height: 9rem; }
+.wheel-box .result { max-width: 320px; min-height: 7rem; }
+@media (min-width: 901px) {
+  .roulette .board { grid-auto-rows: minmax(3.4rem, auto); }
+}
 
 .wheel {
   --size: clamp(220px, 30vw, 310px);

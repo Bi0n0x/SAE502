@@ -90,7 +90,13 @@ templ ProfilePage(p Page, pr Profile) {
 									<td class="num" data-label="Misé">{ credits(g.Wagered) }</td>
 									<td class={ "num", netClass(g.Net) } data-label="Net">{ signed(g.Net) }</td>
 									<td class="num" data-label="Gagnées">{ percent(g.WinRate) }</td>
-									<td class="num" data-label="Meilleur coup">{ signed(g.BestWin) }</td>
+									<td class="num" data-label="Meilleur coup">
+											if g.BestWin > 0 {
+												{ signed(g.BestWin) }
+											} else {
+												<span class="muted" title="Aucun gain sur ce jeu">—</span>
+											}
+										</td>
 								</tr>
 							}
 						</tbody>

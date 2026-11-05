@@ -26,7 +26,7 @@ templ SlotsSwap(st SlotsStage, u User) {
 templ SlotsStageView(st SlotsStage) {
 	<section
 		id="stage"
-		class={ "stage", "slots", templ.KV("spin", st.Spin != nil) }
+		class={ "stage", "slots", templ.KV("spin", st.Spin != nil), templ.KV("won", st.Spin != nil && st.Spin.Payout > st.Spin.Bet) }
 		style={ css("--g-bg:%s;--g-accent:%s;--g-win:%s;--rows:%d;--settle:%s",
 			st.Game.Bg, st.Game.Accent, st.Game.Win, st.Game.Rows, seconds(st.Game.Settle())) }
 	>
@@ -49,6 +49,9 @@ templ SlotsStageView(st SlotsStage) {
 			} else if st.Spin == nil {
 				<p class="muted">{ itoa(len(st.Game.Paylines)) } lignes jouées à chaque tour. Mise de { credits(st.Game.MinBet) } à { credits(st.Game.MaxBet) } crédits.</p>
 			} else if st.Spin.Payout > 0 {
+				if st.Spin.Payout > st.Spin.Bet {
+					@burst()
+				}
 				<p class="result-kicker">Gagné</p>
 				<p class="big win">{ credits(st.Spin.Payout) }</p>
 				<p class="muted">
@@ -150,6 +153,15 @@ templ slotsPaytable(g *SlotsGame) {
 	</details>
 }
 
+// burst throws a handful of coins out of the result when a round pays.
+templ burst() {
+	<span class="burst" aria-hidden="true">
+		for i := 0; i < 12; i++ {
+			<i style={ css("--a:%ddeg;--r:%d", i*30+(i%3)*9, 70+(i*37)%60) }></i>
+		}
+	</span>
+}
+
 // gameHead is the title of a game page; the children are its tags.
 templ gameHead(name, description string) {
 	<div class="game-head">
@@ -169,4 +181,10 @@ templ betAmount(amount, lo, hi int64) {
 		<input class="input" type="number" name="amount" value={ i64(amount) } min={ i64(lo) } max={ i64(hi) } step="1" required inputmode="numeric"/>
 		<small class="hint">{ credits(lo) } à { credits(hi) }</small>
 	</label>
+	<div class="stake-keys" role="group" aria-label="Raccourcis de mise" hidden>
+		<button class="btn" type="button" data-stake="min">Min</button>
+		<button class="btn" type="button" data-stake="half" aria-label="Diviser la mise par deux">½</button>
+		<button class="btn" type="button" data-stake="double" aria-label="Doubler la mise">×2</button>
+		<button class="btn" type="button" data-stake="max">Max</button>
+	</div>
 }

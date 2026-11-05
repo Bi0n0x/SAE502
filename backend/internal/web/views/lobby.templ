@@ -80,6 +80,9 @@ templ topList(rows []LeaderRow) {
 				</li>
 			}
 		</ol>
+		if len(rows) < 3 {
+			<p class="muted top-more">Il reste de la place sur le podium.</p>
+		}
 	}
 }
 
@@ -107,7 +110,6 @@ templ gameCard(g GameCard, compact bool) {
 					<span class="tag tag-game">Volatilité { g.Volatility }</span>
 				}
 			</div>
-			<span class="btn btn-game">Jouer</span>
 		</div>
 	</a>
 }

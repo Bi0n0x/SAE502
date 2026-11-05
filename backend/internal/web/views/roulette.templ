@@ -24,7 +24,7 @@ templ RouletteSwap(st RouletteStage, u User) {
 templ RouletteStageView(st RouletteStage) {
 	<section
 		id="stage"
-		class={ "stage", "roulette", templ.KV("spin", st.Spin != nil) }
+		class={ "stage", "roulette", templ.KV("spin", st.Spin != nil), templ.KV("won", st.Spin != nil && st.Spin.Won) }
 		style={ css("--settle:%s", seconds(spinSeconds)) }
 	>
 		<form
@@ -46,6 +46,7 @@ templ RouletteStageView(st RouletteStage) {
 					} else {
 						<p class={ "pocket", st.Spin.Color }>{ itoa(st.Spin.Result) }</p>
 						if st.Spin.Won {
+							@burst()
 							<p class="big win">{ signed(st.Spin.Payout - st.Spin.Bet) }</p>
 							<p class="muted">{ st.Spin.Option } · rendu { credits(st.Spin.Payout) }</p>
 						} else {
@@ -62,6 +63,7 @@ templ RouletteStageView(st RouletteStage) {
 						<label
 							class={ "cell", c.Class, templ.KV("drawn", st.Spin != nil && c.Value == "number:"+itoa(st.Spin.Result)) }
 							style={ css("--wide:%s;--tall:%s", c.Wide, c.Tall) }
+							data-pick={ st.Game.OptionLabel(c.Value) }
 						>
 							<input type="radio" name="option" value={ c.Value } checked?={ c.Value == st.Option } required/>
 							<span>{ c.Label }</span>
@@ -70,6 +72,16 @@ templ RouletteStageView(st RouletteStage) {
 				</div>
 			</fieldset>
 			<div class="bet">
+				<p class="pick" aria-live="polite">
+					Mise sur
+					<b>
+						if st.Option != "" {
+							{ st.Game.OptionLabel(st.Option) }
+						} else {
+							aucune case
+						}
+					</b>
+				</p>
 				<input type="hidden" name="token" value={ st.Token }/>
 				@betAmount(st.Amount, st.Game.MinBet, st.Game.MaxBet)
 				<button class="btn go" type="submit"><span>Lancer la bille</span></button>
