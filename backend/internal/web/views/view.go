@@ -134,6 +134,30 @@ func netClass(n int64) string {
 	return ""
 }
 
+// outcomeTag colours the label of a round in the history.
+func outcomeTag(net int64) string {
+	switch {
+	case net > 0:
+		return "tag-win"
+	case net < 0:
+		return "tag-loss"
+	}
+	return ""
+}
+
+// metricValue is the figure a leaderboard is sorted by, as the podium shows it.
+func metricValue(r LeaderRow, metric string) string {
+	switch metric {
+	case "net":
+		return signed(r.Net)
+	case "rounds":
+		return i64(r.Rounds) + " parties"
+	case "biggest_win":
+		return signed(r.BiggestWin)
+	}
+	return credits(r.Balance)
+}
+
 func withNext(path, next string) string {
 	if next == "" {
 		return path

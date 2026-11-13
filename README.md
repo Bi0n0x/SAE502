@@ -58,10 +58,11 @@ Le navigateur parle à nginx, qui relaie tout vers le serveur Go. Ce serveur
 rend les pages HTML et expose aussi une API JSON sous `/api`. Il est le seul à
 toucher à PostgreSQL.
 
-L'interface n'a pas de JavaScript maison. Les formulaires marchent tels quels,
+L'interface marche sans JavaScript : les formulaires sont de vrais formulaires,
 et htmx remplace seulement la zone de jeu après une mise, sans recharger la
 page. Les rouleaux et la roue sont animés en CSS à partir du vrai tirage : le
-serveur place la bande de chaque rouleau et calcule l'angle d'arrêt de la roue. cloudflared ouvre un tunnel
+serveur place la bande de chaque rouleau et calcule l'angle d'arrêt de la roue. Un petit script ajoute seulement du
+confort (raccourcis de mise, case misée en toutes lettres). cloudflared ouvre un tunnel
 sortant vers Cloudflare, donc aucun port n'est ouvert sur la box et
 l'administration du NAS reste injoignable depuis l'extérieur.
 

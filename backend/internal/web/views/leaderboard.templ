@@ -14,54 +14,94 @@ var Metrics = []Metric{
 
 templ LeaderboardPage(p Page, metric string, rows []LeaderRow) {
 	@Layout(p) {
-		<section class="panel">
-			<div class="side-head">
-				<div>
-					<p class="eyebrow">Tous les joueurs</p>
-					<h1>Classement</h1>
-				</div>
-				<nav class="tabs">
-					for _, m := range Metrics {
-						<a href={ templ.SafeURL("/classement?metric=" + m.Key) } class={ templ.KV("on", m.Key == metric) }>{ m.Label }</a>
-					}
-				</nav>
+		<section class="page-head">
+			<div>
+				<p class="kicker">Tous les joueurs</p>
+				<h1>Classement</h1>
 			</div>
-			@leaderTable(rows, metric, false)
+			<nav class="tabs" aria-label="Trier le classement par">
+				for _, m := range Metrics {
+					<a
+						href={ templ.SafeURL("/classement?metric=" + m.Key) }
+						if m.Key == metric {
+							aria-current="true"
+						}
+					>{ m.Label }</a>
+				}
+			</nav>
 		</section>
+		if len(rows) == 0 {
+			@emptyState("Personne n'a encore joué.", "Lancez une partie pour ouvrir le classement.", "/", "Choisir un jeu")
+		} else {
+			if len(rows) >= 3 {
+				<ol class="podium" aria-label="Podium">
+					for _, r := range rows[:3] {
+						<li class={ "step", "step-" + itoa(r.Rank), templ.KV("me", r.Me) }>
+							<span class="avatar avatar-lg" aria-hidden="true">{ initials(r.Username) }</span>
+							<span class="step-name">{ r.Username }</span>
+							<span class="step-value">{ metricValue(r, metric) }</span>
+							<span class="step-rank">{ itoa(r.Rank) }</span>
+						</li>
+					}
+				</ol>
+			}
+			<section class="panel panel-flush">
+				<div class="scroll">
+					@leaderTable(rows, metric)
+				</div>
+			</section>
+		}
 	}
 }
 
-templ leaderTable(rows []LeaderRow, metric string, compact bool) {
-	if len(rows) == 0 {
-		<p class="muted">Personne n'a encore joué.</p>
-	} else {
-		<table class="table">
-			<thead>
-				<tr>
-					<th>#</th>
-					<th>Joueur</th>
-					<th class="num">Solde</th>
-					if !compact {
-						<th class="num">Parties</th>
-						<th class="num">Net</th>
-						<th class="num">Plus gros gain</th>
+templ leaderTable(rows []LeaderRow, metric string) {
+	<table class="table board-table">
+		<thead>
+			<tr>
+				<th scope="col">#</th>
+				<th scope="col">Joueur</th>
+				<th scope="col" class={ "num", templ.KV("sorted", metric == "balance") }>Solde</th>
+				<th scope="col" class={ "num", templ.KV("sorted", metric == "rounds") }>Parties</th>
+				<th scope="col" class={ "num", templ.KV("sorted", metric == "net") }>Net</th>
+				<th scope="col" class={ "num", templ.KV("sorted", metric == "biggest_win") }>Plus gros gain</th>
+			</tr>
+		</thead>
+		<tbody>
+			for _, r := range rows {
+				<tr
+					class={ templ.KV("me", r.Me) }
+					if r.Me {
+						aria-current="true"
 					}
+				>
+					<td><span class={ "rank", "r" + itoa(r.Rank) }>{ itoa(r.Rank) }</span></td>
+					<td>
+						<span class="player">
+							<span class="avatar" aria-hidden="true">{ initials(r.Username) }</span>
+							<span>{ r.Username }</span>
+							if r.Me {
+								<span class="tag tag-accent">Vous</span>
+							}
+						</span>
+					</td>
+					<td class={ "num", templ.KV("sorted", metric == "balance") }>{ credits(r.Balance) }</td>
+					<td class={ "num", templ.KV("sorted", metric == "rounds") }>{ i64(r.Rounds) }</td>
+					<td class={ "num", netClass(r.Net), templ.KV("sorted", metric == "net") }>{ signed(r.Net) }</td>
+					<td class={ "num", templ.KV("sorted", metric == "biggest_win") }>{ signed(r.BiggestWin) }</td>
 				</tr>
-			</thead>
-			<tbody>
-				for _, r := range rows {
-					<tr class={ templ.KV("me", r.Me) }>
-						<td><span class={ "rank", "r" + itoa(r.Rank) }>{ itoa(r.Rank) }</span></td>
-						<td>{ r.Username }</td>
-						<td class={ "num", templ.KV("sorted", metric == "balance") }>{ credits(r.Balance) }</td>
-						if !compact {
-							<td class={ "num", templ.KV("sorted", metric == "rounds") }>{ i64(r.Rounds) }</td>
-							<td class={ "num", netClass(r.Net), templ.KV("sorted", metric == "net") }>{ signed(r.Net) }</td>
-							<td class={ "num", templ.KV("sorted", metric == "biggest_win") }>{ signed(r.BiggestWin) }</td>
-						}
-					</tr>
-				}
-			</tbody>
-		</table>
-	}
+			}
+		</tbody>
+	</table>
+}
+
+// emptyState stands in for a list that has nothing to show yet.
+templ emptyState(title, text, href, action string) {
+	<section class="empty">
+		<span class="empty-mark" aria-hidden="true"></span>
+		<h2>{ title }</h2>
+		<p class="muted">{ text }</p>
+		if href != "" {
+			<a class="btn btn-primary" href={ templ.SafeURL(href) }>{ action }</a>
+		}
+	</section>
 }
